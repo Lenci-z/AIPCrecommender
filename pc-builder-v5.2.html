@@ -98,6 +98,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .mode-btn.active { background: #0071e3; color: #fff; }
 .budget-preset.active { border-color: #0071e3 !important; background: #e8f0fe !important; color: #0071e3 !important; font-weight: 500 !important; }
 .flex-btn.active { border-color: #0071e3 !important; background: #e8f0fe !important; color: #0071e3 !important; font-weight: 500 !important; }
+/* Scroll hint animation for tables */
+.scroll-hint { position:relative; }
+.scroll-hint::after { content:'\u5de6\u53f3\u6ed1\u52a8\u67e5\u770b\u5168\u90e8 \u2192'; position:absolute; bottom:4px; right:8px; font-size:10px; color:#86868b; background:rgba(255,255,255,0.85); padding:2px 8px; border-radius:4px; pointer-events:none; opacity:0; transition:opacity 0.3s; }
+.scroll-hint:hover::after { opacity:1; }
+/* Weight change flash animation */
+@keyframes weightFlash { 0%{background:#fff8e1} 50%{background:#fff3cd} 100%{background:transparent} }
+.weight-flash { animation:weightFlash 0.8s ease-out; }
+/* Alt-card click hint */
+.alt-card .click-hint { font-size:10px; color:#86868b; margin-top:2px; opacity:0.6; }
+.alt-card:hover .click-hint { opacity:1; }
+/* Upgrade toast fade-in */
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
 /* Upgrade option card hover */
 .bn-card [onclick]:hover { box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
 .cat-scroll { overflow-y:auto; max-height:400px; }
@@ -388,7 +400,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
       <h2>详细配置清单</h2>
       <span class="section-sub">红绿标价最优/最差</span>
     </div>
-    <div style="overflow-x:auto;">
+    <div style="overflow-x:auto;" class="scroll-hint">
       <table class="component-table" id="buildTable">
         <thead id="buildHead"></thead>
         <tbody id="buildBody"></tbody>
@@ -490,8 +502,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 // Data last updated: 2026-06 via web search (Intel/AMD/NVIDIA official + JD.com reference)
 // Price sources: Intel RCP / NVIDIA MSRP / JD.com official store / Taobao flagship
 // Price history (months) estimated from launch trends; real-time prices may vary
-
-var priceHistory = {}; // populated below for chart rendering
 
 var DB = {
   cpu: [
@@ -748,6 +758,7 @@ var state = {
 var currentBuild = null;
 var currentAlternatives = [];
 var currentBottleneck = null;
+var hoverX = null; // Crosshair hover state for price chart
 
 // Component catalog filter/sort state
 var compFilters = {};
@@ -953,6 +964,11 @@ function analyzeBottleneck(build, scenario, budget) {
     bn.ram = { level: 'warn', severity: 20, detail: ram.capacity + 'GB 非ECC内存，工作站建议ECC以保障数据完整性',
       fix: eccFix };
     scores.push(20);
+  } else if (ram.ecc && build.parts.mb && !build.parts.mb.ecc) {
+    // ECC 内存已选但主板不支持 ECC — 数据联动排查
+    bn.ram = { level: 'warn', severity: 25, detail: 'ECC内存(' + ram.name + ') 搭配不支持ECC的主板(' + build.parts.mb.name + ')，ECC功能无法启用',
+      fix: '更换为支持ECC的主板（如 X870E / B850 / W680 系列）或换回非ECC内存' };
+    scores.push(25);
   } else if (ram.freq < (scenarioConfig[scenario].ramPreferFreq || 3200)) {
     bn.ram = { level: 'warn', severity: 15, detail: 'RAM频率(' + ram.freq + 'MHz) 略低于最佳(' + scenarioConfig[scenario].ramPreferFreq + 'MHz)',
       fix: '可选更高频率内存提升性能' };
@@ -983,6 +999,22 @@ function analyzeBottleneck(build, scenario, budget) {
   if (maxScore >= 50) bn.overall = 'critical';
   else if (maxScore >= 20) bn.overall = 'warn';
   else bn.overall = 'good';
+
+  // ---- Brand Compatibility Check ----
+  bn.brandWarning = null;
+  if (build.parts.mb && build.parts.mb.name && build.parts.mb.name.indexOf('\u65e0\u5339\u914d') >= 0) {
+    var brandExplain = '';
+    if (state.mbBrand !== 'auto' && state.brandPref !== 'all') {
+      brandExplain = '\u54c1\u724c\u504f\u597d\u300c' + state.brandPref + '\u300d\u4e0e\u4e3b\u677f\u54c1\u724c\u300c' + state.mbBrand + '\u300d\u53ef\u80fd\u51b2\u7a81\uff1a\u6240\u9009CPU\u63d2\u5ea7\u4e0e\u4e3b\u677f\u54c1\u724c\u65e0\u4ea4\u96c6';
+    } else if (state.mbBrand === 'asrock' && build.parts.cpu && build.parts.cpu.socket === 'LGA1851') {
+      brandExplain = '\u534e\u87f6(ASRock)\u4e3b\u8981\u4ea7\u54c1\u7ebf\u4e3aAMD AM5\u5e73\u53f0\uff0cIntel LGA1851\u4e3b\u677f\u6781\u5c11\uff0c\u5efa\u8bae\u5207\u6362\u4e3b\u677f\u54c1\u724c\u4e3a\u534e\u7855/\u5fae\u661f';
+    }
+    if (brandExplain) {
+      bn.brandWarning = { level: 'warn', severity: 30, detail: '\u4e3b\u677f\u4e0eCPU/\u54c1\u724c\u672a\u5339\u914d: ' + build.parts.mb.name, fix: brandExplain };
+      scores.push(30);
+      bn.overall = Math.max(bn.overall === 'critical' ? 3 : (bn.overall === 'warn' ? 2 : 1), 2) === 3 ? 'critical' : 'warn';
+    }
+  }
 
   return bn;
 }
@@ -1140,20 +1172,29 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
     if (!officialFilter(g)) return false;
     return true;
   });
-  gpuPool.sort(function(a, b) { return scoreGPU(b, scenario) - scoreGPU(a, scenario); });
   var gpu = null;
   var remaining = budget - usedBudget;
   var maxGpuPrice = remaining * 0.7;
-  for (var gi = 0; gi < gpuPool.length; gi++) {
-    if (gpuPool[gi].price <= maxGpuPrice && (scenario === 'office' || gpuPool[gi].gameScore >= (cfg.gpuMinScore || 0))) {
-      gpu = gpuPool[gi];
-      break;
+  // Office: 按价格升序优先选最便宜显卡（或用核显）
+  if (scenario === 'office') {
+    gpuPool.sort(function(a, b) { return a.price - b.price; });
+    for (var oi = 0; oi < gpuPool.length; oi++) {
+      if (gpuPool[oi].price <= maxGpuPrice * 0.15) { gpu = gpuPool[oi]; break; }
     }
-  }
-  if (!gpu) gpu = gpuPool[gpuPool.length - 1];
-  if (scenario === 'ai' && gpu && gpu.vram < 12) {
-    for (var gi2 = 0; gi2 < gpuPool.length; gi2++) {
-      if (gpuPool[gi2].vram >= 12 && gpuPool[gi2].price <= maxGpuPrice * 1.2) { gpu = gpuPool[gi2]; break; }
+    if (!gpu && gpuPool.length > 0) { gpu = gpuPool[0]; }
+  } else {
+    gpuPool.sort(function(a, b) { return scoreGPU(b, scenario) - scoreGPU(a, scenario); });
+    for (var gi = 0; gi < gpuPool.length; gi++) {
+      if (gpuPool[gi].price <= maxGpuPrice && gpuPool[gi].gameScore >= (cfg.gpuMinScore || 0)) {
+        gpu = gpuPool[gi];
+        break;
+      }
+    }
+    if (!gpu) { gpu = gpuPool[gpuPool.length - 1]; }
+    if (scenario === 'ai' && gpu && gpu.vram < 12) {
+      for (var gi2 = 0; gi2 < gpuPool.length; gi2++) {
+        if (gpuPool[gi2].vram >= 12 && gpuPool[gi2].price <= maxGpuPrice * 1.2) { gpu = gpuPool[gi2]; break; }
+      }
     }
   }
   build.parts.gpu = gpu;
@@ -1477,10 +1518,10 @@ function syncBudget(source) {
   } else {
     v = parseInt(input.value) || 3000;
     if (v < 1000) v = 1000;
-    // Dynamically extend slider range
-    var max = parseInt(slider.max);
-    if (v > max) {
-      slider.max = Math.ceil(v / 1000) * 1000;
+    // Dynamically extend slider range with larger steps
+    var curMax = parseInt(slider.max);
+    if (v > curMax) {
+      slider.max = Math.ceil(v / 5000) * 5000;
     }
     slider.value = Math.min(v, parseInt(slider.max));
   }
@@ -1489,22 +1530,41 @@ function syncBudget(source) {
   // Update flex hint
   var hint = document.getElementById('flexHint');
   if (hint) hint.textContent = '\u5b9e\u9645\u53ef\u7528: \u00a5' + getEffectiveBudget().toLocaleString();
-  // Update preset button styles
+  // Update preset button styles — highlight closest match
   document.querySelectorAll('.budget-preset').forEach(function(b) {
     var bv = parseInt(b.textContent.replace(/[^\d]/g,'')) * 1000;
-    b.classList.toggle('active', bv === v);
+    var isActive = (bv === v) || (v > 50000 && bv === 50000 && v > 50000);
+    b.classList.toggle('active', isActive);
+    if (v > 50000) b.style.borderColor = '#d2d2d7';
   });
   // Update tier label
   var tier = '';
-  if (v <= 3000) tier = '入门级';
-  else if (v <= 5000) tier = '经济型';
-  else if (v <= 8000) tier = '主流型';
-  else if (v <= 10000) tier = '中高端';
-  else if (v <= 15000) tier = '高性能';
-  else if (v <= 20000) tier = '旗舰级';
-  else if (v <= 30000) tier = '发烧级';
-  else tier = '顶级定制';
+  if (v <= 3000) tier = '\u5165\u95e8\u00a53K';
+  else if (v <= 5000) tier = '\u7ecf\u6d4e\u00a55K';
+  else if (v <= 8000) tier = '\u4e3b\u6d41\u00a58K';
+  else if (v <= 10000) tier = '\u4e2d\u9ad8\u00a510K';
+  else if (v <= 15000) tier = '\u9ad8\u6027\u80fd\u00a515K';
+  else if (v <= 20000) tier = '\u65d7\u8230\u00a520K';
+  else if (v <= 30000) tier = '\u53d1\u70e7\u00a530K';
+  else if (v <= 40000) tier = '\u9876\u7ea7\u00a540K';
+  else tier = '\u81f3\u5c0a\u00a5' + (v/1000).toFixed(0) + 'K';
   document.getElementById('budgetTier').textContent = tier;
+  // Show custom badge when budget exceeds presets
+  var presetBadge = document.getElementById('budgetRangeHint');
+  if (!presetBadge) {
+    presetBadge = document.createElement('span');
+    presetBadge.id = 'budgetRangeHint';
+    presetBadge.style.cssText = 'font-size:10px;color:#86868b;margin-left:8px;';
+    document.getElementById('budgetTier').parentNode.appendChild(presetBadge);
+  }
+  if (v > 50000) {
+    presetBadge.textContent = ' (\u8d85\u51fa\u9884\u8bbe\u8303\u56f4)';
+    presetBadge.style.color = '#ff9500';
+    slider.style.accentColor = '#ff9500';
+  } else {
+    presetBadge.textContent = '';
+    slider.style.accentColor = '#0071e3';
+  }
   rebuild();
 }
 
@@ -1620,6 +1680,17 @@ function renderWeights() {
 
 function updateWeight(key, val) {
   state.weights[key] = parseInt(val);
+  // Flash the changed weight row for visual feedback
+  var allRows = document.querySelectorAll('.weight-row');
+  for (var wi = 0; wi < allRows.length; wi++) {
+    var labelEl = allRows[wi].querySelector('label');
+    if (labelEl && labelEl.textContent === ({performance:'\u6027\u80fd',priceRatio:'\u6027\u4ef7\u6bd4',powerEfficiency:'\u80fd\u6548',upgrade:'\u53ef\u5347\u7ea7\u6027'})[key]) {
+      allRows[wi].classList.remove('weight-flash');
+      void allRows[wi].offsetWidth;
+      allRows[wi].classList.add('weight-flash');
+      break;
+    }
+  }
   rebuild();
 }
 
@@ -1678,6 +1749,10 @@ function renderBottleneck(bn) {
     { key: 'ram', label: '内存 瓶颈' },
     { key: 'storage', label: '存储 瓶颈' }
   ];
+  // Add brand compatibility card if warning exists
+  if (bn.brandWarning) {
+    items.push({ key: 'brandWarning', label: '品牌兼容性' });
+  }
 
   var html = '';
   items.forEach(function(item) {
@@ -4114,7 +4189,7 @@ function renderAlternatives(alts) {
     html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
     html += '<span class="alt-price">\u00a5' + alt.totalPrice.toLocaleString() + '</span>';
     html += '<span class="alt-diff" style="' + diffCls + '">' + diffStr + '</span>';
-    html += '</div></div>';
+    html += '</div><div class="click-hint">\u70b9\u51fb\u5207\u6362\u5230\u6b64\u65b9\u6848</div></div>';
   });
   if (alts.length === 0) html = '<div style="padding:20px;text-align:center;color:#86868b;">暂无可比备选方案</div>';
   document.getElementById('altGrid').innerHTML = html;
@@ -4130,6 +4205,41 @@ function showAltDetail(idx) {
     document.getElementById('scenarioLabel').textContent = scenarioConfig[state.scenario].label + ' | \u5907\u9009\u65b9\u6848 #' + (idx + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+}
+
+// ==================== UPGRADE DETAIL MODAL ====================
+
+// Lightweight toast notification for upgrade option selections
+function showUpgradeDetail(name, price, diff) {
+  var overlay = document.createElement('div');
+  overlay.id = 'upgradeToast';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;animation:fadeIn 0.2s;';
+  overlay.onclick = function(e) { if (e.target === overlay) closeUpgradeDetail(); };
+
+  var modal = document.createElement('div');
+  modal.style.cssText = 'background:#fff;border-radius:14px;padding:28px 32px;max-width:420px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,0.18);text-align:center;';
+  modal.innerHTML =
+    '<div style="font-size:40px;margin-bottom:12px;">&#128161;</div>' +
+    '<div style="font-size:16px;font-weight:600;margin-bottom:8px;">\u5347\u7ea7\u914d\u4ef6\u8be6\u60c5</div>' +
+    '<div style="font-size:13px;color:#1d1d1f;margin-bottom:4px;">' + name + '</div>' +
+    '<div style="font-size:22px;font-weight:700;color:#c0392b;margin:8px 0;">\u00a5' + parseInt(price).toLocaleString() + '</div>' +
+    (diff > 0 ? '<div style="font-size:12px;color:#e65100;margin-bottom:12px;">\u6bd4\u5f53\u524d\u591a\u51fa +\u00a5' + parseInt(diff).toLocaleString() + '</div>' : '') +
+    '<div style="font-size:11px;color:#86868b;margin-bottom:16px;line-height:1.5;">\u6b64\u4e3a\u63a8\u8350\u5347\u7ea7\u65b9\u6848\uff0c\u53ef\u5728\u54c1\u724c\u504f\u597d\u4e2d\u8c03\u6574\u7b5b\u9009\u6761\u4ef6\u83b7\u53d6\u66f4\u591a\u9009\u62e9</div>' +
+    '<button onclick="closeUpgradeDetail()" style="padding:10px 30px;background:#0071e3;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;">\u77e5\u9053\u4e86</button>';
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  // Keyboard close
+  document.addEventListener('keydown', closeOnEsc);
+  function closeOnEsc(e) {
+    if (e.key === 'Escape') { closeUpgradeDetail(); document.removeEventListener('keydown', closeOnEsc); }
+  }
+}
+
+function closeUpgradeDetail() {
+  var el = document.getElementById('upgradeToast');
+  if (el) { el.style.opacity = '0'; el.style.transition = 'opacity 0.2s'; setTimeout(function() { el.remove(); }, 200); }
 }
 
 // ==================== PRICE HISTORY & CHART ====================
@@ -4155,18 +4265,28 @@ function generatePriceHistory(item) {
     date.setMonth(date.getMonth() + 1);
     steps++;
   }
-  // Simulate JD prices (slightly above current, trending down)
+  // Ensure at least 2 data points for chart rendering
+  if (steps < 2) {
+    for (var pad = 0; pad < 3 - steps; pad++) {
+      var m = new Date(now.getFullYear(), now.getMonth() + pad + 1, 1);
+      months.push({ year: m.getFullYear(), month: m.getMonth() + 1 });
+    }
+    steps = months.length;
+  }
+  // Simulate JD prices (slightly above current, trending down) — 确定性模拟
   var jdPrices = [];
   var tbPrices = [];
   var jdStart = launch * (1 + 0.03);
   var tbStart = launch * (1 + 0.01);
   var jdCurrent = current * (1 + 0.02);
   var tbCurrent = current;
+  var seed = (item.launchPrice || launch) * 100 + (current || 1); // deterministic seed
   for (var i = 0; i < steps; i++) {
     var t = i / (steps - 1 || 1);
-    // Smooth curve with some noise
-    var noiseJD = (Math.random() - 0.5) * current * 0.02;
-    var noiseTB = (Math.random() - 0.5) * current * 0.025;
+    // Deterministic "noise" using pseudo-hash — chart stable across page loads
+    var noiseFactor = ((seed * 9301 + 49297 * (i + 1)) % 233280) / 233280;
+    var noiseJD = (noiseFactor - 0.5) * current * 0.02;
+    var noiseTB = (noiseFactor - 0.5) * current * 0.025;
     var jd = jdStart + (jdCurrent - jdStart) * Math.pow(t, 0.7) + noiseJD;
     var tb = tbStart + (tbCurrent - tbStart) * Math.pow(t, 0.8) + noiseTB;
     jdPrices.push({ price: Math.round(jd) });
