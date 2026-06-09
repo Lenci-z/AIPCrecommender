@@ -316,8 +316,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 // Price sources: Intel RCP / NVIDIA MSRP / JD.com official store / Taobao flagship
 // Price history (months) estimated from launch trends; real-time prices may vary
 
-var priceHistory = {}; // populated below for chart rendering
-
 var DB = {
   cpu: [
     // ======= Intel Core Ultra 200S Plus (Arrow Lake Refresh, 2026 Q1) =======
@@ -487,6 +485,7 @@ var state = {
 var currentBuild = null;
 var currentAlternatives = [];
 var currentBottleneck = null;
+var hoverX = null; // Crosshair hover state for price chart
 
 // ==================== SCENARIO CONFIG ====================
 
@@ -818,20 +817,30 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
     if (!officialFilter(g)) return false;
     return true;
   });
-  gpuPool.sort(function(a, b) { return scoreGPU(b, scenario) - scoreGPU(a, scenario); });
   var gpu = null;
   var remaining = budget - usedBudget;
   var maxGpuPrice = remaining * 0.7;
-  for (var gi = 0; gi < gpuPool.length; gi++) {
-    if (gpuPool[gi].price <= maxGpuPrice && (scenario === 'office' || gpuPool[gi].gameScore >= (cfg.gpuMinScore || 0))) {
-      gpu = gpuPool[gi];
-      break;
+  // Office: 优先选最便宜的显卡（或直接用核显）, 性价比排序
+  if (scenario === 'office') {
+    gpuPool.sort(function(a, b) { return a.price - b.price; });
+    // 先找最便宜的显卡
+    for (var oi = 0; oi < gpuPool.length; oi++) {
+      if (gpuPool[oi].price <= maxGpuPrice * 0.15) { gpu = gpuPool[oi]; break; }
     }
-  }
-  if (!gpu) gpu = gpuPool[gpuPool.length - 1];
-  if (scenario === 'ai' && gpu && gpu.vram < 12) {
-    for (var gi2 = 0; gi2 < gpuPool.length; gi2++) {
-      if (gpuPool[gi2].vram >= 12 && gpuPool[gi2].price <= maxGpuPrice * 1.2) { gpu = gpuPool[gi2]; break; }
+    if (!gpu && gpuPool.length > 0) { gpu = gpuPool[0]; }
+  } else {
+    gpuPool.sort(function(a, b) { return scoreGPU(b, scenario) - scoreGPU(a, scenario); });
+    for (var gi = 0; gi < gpuPool.length; gi++) {
+      if (gpuPool[gi].price <= maxGpuPrice && gpuPool[gi].gameScore >= (cfg.gpuMinScore || 0)) {
+        gpu = gpuPool[gi];
+        break;
+      }
+    }
+    if (!gpu) { gpu = gpuPool[gpuPool.length - 1]; }
+    if (scenario === 'ai' && gpu && gpu.vram < 12) {
+      for (var gi2 = 0; gi2 < gpuPool.length; gi2++) {
+        if (gpuPool[gi2].vram >= 12 && gpuPool[gi2].price <= maxGpuPrice * 1.2) { gpu = gpuPool[gi2]; break; }
+      }
     }
   }
   build.parts.gpu = gpu;
@@ -1023,7 +1032,7 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
 
 function findAlternativesWithFix(build, scenario, budget, brandPref, memPref, weights) {
   var alts = [];
-  var attempts = [budget * 0.7, budget * 0.85, budget * 1.0, budget * 1.15, budget * 1.3, budget];
+  var attempts = [budget * 0.7, budget * 0.85, budget * 1.0, budget * 1.15, budget * 1.3];
   attempts.forEach(function(ab) {
     ab = Math.min(Math.max(Math.round(ab), 3000), 50000);
     var alt = buildRecommendation(scenario, ab, brandPref, memPref, weights);
@@ -1057,19 +1066,21 @@ function syncBudget(source) {
   } else {
     v = parseInt(input.value) || 3000;
     if (v < 1000) v = 1000;
-    // Dynamically extend slider range
-    var max = parseInt(slider.max);
-    if (v > max) {
-      slider.max = Math.ceil(v / 1000) * 1000;
+    // Dynamically extend slider range when input exceeds current max
+    var curMax = parseInt(slider.max);
+    if (v > curMax) {
+      slider.max = Math.ceil(v / 5000) * 5000;
     }
     slider.value = Math.min(v, parseInt(slider.max));
   }
   state.budget = v;
   display.textContent = '\u00a5' + v.toLocaleString();
-  // Update preset button styles
+  // Update preset button styles — highlight closest match
   document.querySelectorAll('.budget-preset').forEach(function(b) {
     var bv = parseInt(b.textContent.replace(/[^\d]/g,'')) * 1000;
-    b.classList.toggle('active', bv === v);
+    var isActive = (bv === v) || (v > 50000 && bv === 50000 && v > 50000);
+    b.classList.toggle('active', isActive);
+    if (v > 50000) b.style.borderColor = '#d2d2d7';
   });
   // Update tier label
   var tier = '';
@@ -1082,6 +1093,15 @@ function syncBudget(source) {
   else if (v <= 30000) tier = '发烧级';
   else tier = '顶级定制';
   document.getElementById('budgetTier').textContent = tier;
+  // Show custom badge when budget exceeds presets
+  var presetBadge = document.getElementById('budgetRangeHint');
+  if (!presetBadge) {
+    presetBadge = document.createElement('span');
+    presetBadge.id = 'budgetRangeHint';
+    presetBadge.style.cssText = 'font-size:10px;color:#86868b;margin-left:8px;';
+    document.getElementById('budgetTier').parentNode.appendChild(presetBadge);
+  }
+  presetBadge.textContent = v > 50000 ? '(超出常规预设范围，滑块已自动扩展至 ¥' + parseInt(slider.max).toLocaleString() + ')' : '';
   rebuild();
 }
 
@@ -1549,6 +1569,15 @@ function generatePriceHistory(item) {
     months.push({ year: date.getFullYear(), month: date.getMonth() + 1 });
     date.setMonth(date.getMonth() + 1);
     steps++;
+  }
+  // Ensure at least 2 data points for chart rendering
+  if (steps < 2) {
+    // Pad with additional months going forward
+    for (var pad = 0; pad < 3 - steps; pad++) {
+      var m = new Date(now.getFullYear(), now.getMonth() + pad + 1, 1);
+      months.push({ year: m.getFullYear(), month: m.getMonth() + 1 });
+    }
+    steps = months.length;
   }
   // Simulate JD prices (slightly above current, trending down)
   var jdPrices = [];
