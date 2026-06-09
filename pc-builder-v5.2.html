@@ -141,11 +141,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .step-pick-card .scenario-card:hover { border-color:#0071e3; transform:translateY(-2px); }
 .step-pick-card .scenario-card.active { border-color:#0071e3; background:#f0f7ff; }
 @media (max-width:768px) { .step-pick-card { grid-template-columns:repeat(2,1fr); } .steps { flex-direction:column; border-radius:10px; overflow:hidden; } .step-item { border-right:none; border-bottom:1px solid #e8e8ed; } }
-/* Demo banner responsive */
-@media (max-width:480px) {
-  #demoBanner { flex-direction:column; align-items:stretch !important; text-align:center; padding:12px 14px !important; }
-  #demoBanner > div { min-width:unset !important; justify-content:center; }
-  #demoBanner > span { text-align:center; }
 /* Perf cards in step 3 */
 .perf-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; padding:16px 0; }
 .perf-card { background:#f5f5f7; border-radius:10px; padding:12px; text-align:center; }
@@ -215,17 +210,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
         <div class="name">Apple 生态</div>
         <div class="desc">Mac Studio / 统一内存 / AI创作</div>
       </div>
-    </div>
-    <!-- Demo Button -->
-    <div id="demoBanner" onclick="runDemo()" style="margin-bottom:20px;padding:16px 20px;background:linear-gradient(135deg,#fef0ef,#fff5f0);border:0.5px solid #ffd6cc;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;transition:all 0.2s ease;" onmouseover="this.style.borderColor='#c0392b';this.style.background='linear-gradient(135deg,#fce8e5,#ffece6)'" onmouseout="this.style.borderColor='#ffd6cc';this.style.background='linear-gradient(135deg,#fef0ef,#fff5f0)'">
-      <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:200px;">
-        <span style="font-size:24px;">&#127918;</span>
-        <div>
-          <div style="font-weight:600;font-size:14px;color:#1d1d1f;">一键体验：赛博朋克2077 小白装机</div>
-          <div style="font-size:12px;color:#86868b;">预算¥10,000 · Intel+NVIDIA · 华硕主板 · 点击自动演示</div>
-        </div>
-      </div>
-      <span style="padding:6px 16px;background:#c0392b;color:#fff;border-radius:6px;font-size:13px;font-weight:500;white-space:nowrap;">&#9654; 开始演示</span>
     </div>
     <!-- Apple Model Selector (shown only in apple scenario) -->
     <div id="appleModelSelector" style="display:none;margin-bottom:16px;">
@@ -1796,56 +1780,6 @@ function rebuild() {
   renderAppleCompare();
   // Render step 3 content
   renderStep3(build);
-}
-
-// ==================== DEMO MODE ====================
-// One-click demo: gaming scenario, ¥10K budget, Intel+NVIDIA, ASUS motherboard
-function runDemo() {
-  var btn = document.getElementById('demoBanner');
-  var origText = btn ? btn.innerHTML : '';
-  if (btn) {
-    btn.style.pointerEvents = 'none';
-    btn.style.opacity = '0.7';
-    btn.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex:1;"><span style="font-size:20px;">&#9203;</span><div><div style="font-weight:600;font-size:14px;color:#1d1d1f;">演示进行中...</div><div style="font-size:12px;color:#86868b;">正在为你自动选择配置</div></div></div>';
-  }
-
-  // Step 1: Select gaming scenario (this calls goStep(2) internally)
-  selectScenarioStep('gaming');
-
-  // Step 2: Wait for step transition, then set controls and generate
-  setTimeout(function() {
-    // Set budget slider to 10000
-    var slider = document.getElementById('budgetSlider');
-    if (slider) {
-      slider.value = 10000;
-      // Extend max if needed
-      if (10000 > parseInt(slider.max)) slider.max = 15000;
-    }
-    var input = document.getElementById('budgetInput');
-    if (input) input.value = 10000;
-    // Sync budget display
-    syncBudget('slider');
-
-    // Set brand preference
-    var brandEl = document.getElementById('brandPref');
-    if (brandEl) brandEl.value = 'intel-nvidia';
-
-    // Set motherboard brand to ASUS
-    var mbEl = document.getElementById('mbBrand');
-    if (mbEl) mbEl.value = 'asus';
-
-    // Generate configuration (goStep(3) reads DOM values and calls rebuild)
-    goStep(3);
-
-    // Restore button after a brief moment
-    setTimeout(function() {
-      if (btn) {
-        btn.style.pointerEvents = '';
-        btn.style.opacity = '';
-        btn.innerHTML = origText;
-      }
-    }, 800);
-  }, 600);
 }
 
 // ==================== STEP 3 RENDERING ====================
