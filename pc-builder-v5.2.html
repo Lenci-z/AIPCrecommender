@@ -903,9 +903,13 @@ function analyzeBottleneck(build, scenario, budget) {
       var vramNeeded = cpu.cores > 12 ? 24 : (cpu.cores > 8 ? 16 : 12);
       if (gpu.vram < vramNeeded) {
         var vramSev = Math.round((1 - gpu.vram / vramNeeded) * 100);
+        // Find GPU upgrade suggestions from database
+        var vramUpgrades = DB.gpu.filter(function(g) { return g.vram >= vramNeeded && officialFilter(g) && g.price <= gpu.price * 2; });
+        vramUpgrades.sort(function(a,b) { return a.price - b.price; });
+        var vramFix = vramUpgrades.length > 0 ? '建议升级至 ' + vramUpgrades.slice(0,3).map(function(g) { return g.name + '(' + g.vram + 'GB)'; }).join(' / ') : '选择显存大于' + vramNeeded + 'GB的GPU (如RTX 5090D 32GB)';
         bn.gpu = { level: vramSev > 50 ? 'critical' : 'warn', severity: vramSev,
           detail: 'GPU显存(' + gpu.vram + 'GB) 不够满足AI工作负载需求(建议' + vramNeeded + 'GB+)',
-          fix: '选择更大显存的GPU (RTX 4090 24GB / RTX 4080S 16GB)' };
+          fix: vramFix };
         scores.push(vramSev);
       } else {
         bn.gpu = { level: 'good', severity: 0, detail: 'GPU显存(' + gpu.vram + 'GB) 足够AI负载', fix: '' };
@@ -926,8 +930,9 @@ function analyzeBottleneck(build, scenario, budget) {
   if (scenario === 'ai') idealRAM = Math.max(64, cpu.cores > 12 ? 128 : 64);
   if (scenario === 'productivity') idealRAM = Math.max(32, cpu.cores > 16 ? 64 : 32);
 
-  if (ram.capacity < idealRAM) {
-    var ramSev = Math.round((1 - ram.capacity / idealRAM) * 100);
+  var effectiveRAM = ram.totalCapacity || ram.capacity;
+  if (effectiveRAM < idealRAM) {
+    var ramSev = Math.round((1 - effectiveRAM / idealRAM) * 100);
     var ramNote = 'RAM容量不足';
     if (scenario === 'workstation' || scenario === 'productivity') ramNote += '，工作站建议ECC';
     // Find RAM upgrade with price
@@ -937,7 +942,7 @@ function analyzeBottleneck(build, scenario, budget) {
     if (ramOpts.length > 0) upgRam = ramOpts[0];
     var ramFix = upgRam ? '升级至 ' + upgRam.name + ' (+' + (upgRam.price - ram.price > 0 ? '\u00a5' + (upgRam.price - ram.price) : '\u00a5' + upgRam.price) + ')' : '升级至 ' + idealRAM + 'GB';
     bn.ram = { level: ramSev > 50 ? 'critical' : 'warn', severity: ramSev,
-      detail: ram.capacity + 'GB < 建议' + idealRAM + 'GB (' + ramNote + ')',
+      detail: effectiveRAM + 'GB < 建议' + idealRAM + 'GB (' + ramNote + ')',
       fix: ramFix };
     scores.push(ramSev);
   } else if (scenarioConfig[scenario].needECC && !ram.ecc) {
@@ -949,7 +954,7 @@ function analyzeBottleneck(build, scenario, budget) {
       var bestECC = eccOpts[0];
       eccFix = '替换为 ' + bestECC.name + ' (+' + (bestECC.price - ram.price > 0 ? '\u00a5' + (bestECC.price - ram.price) : '\u00a5' + bestECC.price) + ')' + (eccOpts.length > 1 ? '，另有' + eccOpts.slice(1).map(function(e) { return e.name; }).join('、') : '');
     }
-    bn.ram = { level: 'warn', severity: 20, detail: ram.capacity + 'GB 非ECC内存，工作站建议ECC以保障数据完整性',
+    bn.ram = { level: 'warn', severity: 20, detail: (ram.totalCapacity || ram.capacity) + 'GB 非ECC内存，工作站建议ECC以保障数据完整性',
       fix: eccFix };
     scores.push(20);
   } else if (ram.ecc && build.parts.mb && !build.parts.mb.ecc) {
@@ -962,7 +967,7 @@ function analyzeBottleneck(build, scenario, budget) {
       fix: '可选更高频率内存提升性能' };
     scores.push(15);
   } else {
-    bn.ram = { level: 'good', severity: 0, detail: ram.capacity + 'GB ' + ram.freq + 'MHz ' + (ram.ecc ? 'ECC ' : '') + '内存充足', fix: '' };
+    bn.ram = { level: 'good', severity: 0, detail: (ram.totalCapacity || ram.capacity) + 'GB ' + ram.freq + 'MHz ' + (ram.ecc ? 'ECC ' : '') + '内存充足', fix: '' };
     scores.push(0);
   }
 
@@ -1226,8 +1231,12 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
   for (var ri = 0; ri < ramPool.length; ri++) {
     if (ramPool[ri].capacity >= targetRAM && ramPool[ri].price <= remaining * 0.4) { ram = ramPool[ri]; break; }
   }
+  // Calculate total capacity with multiple sticks (dual-channel for most builds)
+  ram.sticks = ram.capacity >= targetRAM ? 1 : Math.min(Math.ceil(targetRAM / ram.capacity), 4);
+  ram.totalCapacity = ram.capacity * ram.sticks;
+  ram.totalPrice = ram.price * ram.sticks;
   build.parts.ram = ram;
-  usedBudget += ram.price;
+  usedBudget += ram.totalPrice;
 
   // ---- Storage ----
   remaining = budget - usedBudget;
@@ -1462,7 +1471,7 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
     totalTDP: totalTDP,
     gpuVRAM: gpu.vram || 0,
     cpuCores: cpu.cores,
-    ramCapacity: ram.capacity,
+    ramCapacity: ram.totalCapacity || ram.capacity,
     storageCapacity: storage.capacity,
     cpuModel: cpu.name,
     gpuModel: gpu.name,
