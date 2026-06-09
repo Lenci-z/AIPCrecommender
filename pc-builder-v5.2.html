@@ -1456,7 +1456,7 @@ var currentStep = 1;
 
 function goStep(n) {
   if (n === 3) {
-    // Generate configuration before showing step 3
+    goStep._active = true; // signal renderStep3 to scroll
     state.brandPref = document.getElementById('brandPref').value;
     state.memPref = document.getElementById('memPref').value;
     state.mbBrand = document.getElementById('mbBrand').value;
@@ -1472,6 +1472,7 @@ function goStep(n) {
     el.classList.toggle('done', stepNum < n);
   });
   if (n === 1) window.scrollTo({ top: 0, behavior: 'smooth' });
+  goStep._active = false; // reset flag
 }
 
 function selectScenarioStep(s) {
@@ -1774,8 +1775,8 @@ function renderStep3(build) {
   renderBenchmarkProd(build);
   renderBenchmarkAI(build);
 
-  // Scroll to top
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Scroll to top (only when called from step navigation, not from onchange side effects)
+  if (goStep._active) window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function renderWeights() {
