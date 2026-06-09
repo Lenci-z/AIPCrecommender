@@ -377,6 +377,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
     <!-- Scenario label -->
     <div style="margin-bottom:12px;font-size:13px;color:#86868b;">使用场景: <strong id="step3ScenarioLabel" style="color:#1d1d1f;">游戏</strong> | 预算: <strong id="step3BudgetLabel" style="color:#0071e3;">&#165;8,000</strong></div>
 
+    <!-- Warnings -->
+    <div id="step3Warnings" style="margin-bottom:12px;"></div>
+
     <!-- Performance metrics -->
     <div class="result-section">
       <div class="section-header">
@@ -515,7 +518,10 @@ var DB = {
     { id:'i9-12900K', name:'Intel Core i9-12900K', brand:'intel', cores:16, threads:24, boost:5.2, tdp:241, singleScore:2100, multiScore:29500, igpu:true, price:1699, gen:'12th', socket:'LGA1700', note:'旗舰经典', official:false, source:'intel', launchPrice:4999, launchDate:'2021-11' },
     { id:'R5-5600', name:'AMD Ryzen 5 5600', brand:'amd', cores:6, threads:12, boost:4.4, tdp:65, singleScore:1650, multiScore:12500, igpu:false, price:469, gen:'Zen3', socket:'AM4', note:'AM4性价比', official:false, source:'amd', launchPrice:1199, launchDate:'2022-04' },
     { id:'R7-5800X3D', name:'AMD Ryzen 7 5800X3D', brand:'amd', cores:8, threads:16, boost:4.5, tdp:105, singleScore:1780, multiScore:21400, igpu:false, price:1599, gen:'Zen3', socket:'AM4', note:'AM4游戏神U', official:false, source:'amd+gkw', launchPrice:3299, launchDate:'2022-04' },
-    { id:'R9-5950X', name:'AMD Ryzen 9 5950X', brand:'amd', cores:16, threads:32, boost:4.9, tdp:105, singleScore:1800, multiScore:28650, igpu:false, price:1899, gen:'Zen3', socket:'AM4', note:'AM4旗舰', official:false, source:'amd', launchPrice:4999, launchDate:'2020-11' }
+    { id:'R9-5950X', name:'AMD Ryzen 9 5950X', brand:'amd', cores:16, threads:32, boost:4.9, tdp:105, singleScore:1800, multiScore:28650, igpu:false, price:1899, gen:'Zen3', socket:'AM4', note:'AM4旗舰', official:false, source:'amd', launchPrice:4999, launchDate:'2020-11' },
+    // ======= Budget CPUs (official, sub-1000) =======
+    { id:'R5-7500F', name:'AMD Ryzen 5 7500F', brand:'amd', cores:6, threads:12, boost:5.0, tdp:65, singleScore:2100, multiScore:15800, igpu:false, price:899, gen:'Zen4', socket:'AM5', note:'AM5入门无核显', official:true, source:'amd+jd', launchPrice:999, launchDate:'2023-07' },
+    { id:'i3-14100F', name:'Intel Core i3-14100F', brand:'intel', cores:4, threads:8, boost:4.7, tdp:60, singleScore:1850, multiScore:10500, igpu:false, price:669, gen:'14th', socket:'LGA1700', note:'入门LGA1700', official:true, source:'intel+jd', launchPrice:799, launchDate:'2024-01' }
   ],
   gpu: [
     // ======= NVIDIA RTX 50 Series (Blackwell, 2025-2026) =======
@@ -556,7 +562,10 @@ var DB = {
     { id:'GTX1660S', name:'NVIDIA GTX 1660 Super', brand:'nvidia', vram:6, cuda:1408, boost:1785, tdp:125, gameScore:7800, aiScore:3000, price:599, note:'经典甜品', official:false, source:'nvidia', launchPrice:1599, launchDate:'2019-10' },
     { id:'GTX1060', name:'NVIDIA GTX 1060 6G', brand:'nvidia', vram:6, cuda:1280, boost:1708, tdp:120, gameScore:6000, aiScore:1800, price:349, note:'永世经典', official:false, source:'nvidia', launchPrice:1999, launchDate:'2016-07' },
     { id:'GTX980', name:'NVIDIA GTX 980', brand:'nvidia', vram:4, cuda:2048, boost:1216, tdp:165, gameScore:4500, aiScore:1000, price:229, note:'Maxwell经典', official:false, source:'nvidia', launchPrice:3999, launchDate:'2014-09' },
-    { id:'RX580', name:'AMD RX 580 8G', brand:'amd', vram:8, cuda:2304, boost:1340, tdp:185, gameScore:5500, aiScore:1200, price:299, note:'A卡经典', official:false, source:'amd', launchPrice:1899, launchDate:'2017-04' }
+    { id:'RX580', name:'AMD RX 580 8G', brand:'amd', vram:8, cuda:2304, boost:1340, tdp:185, gameScore:5500, aiScore:1200, price:299, note:'A卡经典', official:false, source:'amd', launchPrice:1899, launchDate:'2017-04' },
+    // ======= Budget GPUs (official, sub-2000) =======
+    { id:'RTX3050-6G', name:'NVIDIA RTX 3050 6G', brand:'nvidia', vram:6, cuda:2304, boost:1470, tdp:70, gameScore:7500, aiScore:6000, price:1499, note:'1080p入门', official:true, source:'nvidia+jd', launchPrice:1699, launchDate:'2024-02', len:220, slots:2 },
+    { id:'RX6600', name:'AMD Radeon RX 6600', brand:'amd', vram:8, cuda:1792, boost:2491, tdp:132, gameScore:12000, aiScore:8000, price:1599, note:'1080p性价比选', official:true, source:'amd+jd', launchPrice:1899, launchDate:'2021-10', len:240, slots:2 }
   ],
   ram: [
     { id:'D4-16-3200', name:'DDR4 16GB 3200MHz', brand:'generic', capacity:16, gen:'ddr4', freq:3200, ecc:false, price:229, note:'经济', official:true, launchPrice:299, launchDate:'2022-01' },
@@ -620,7 +629,10 @@ var DB = {
     { id:'PSU-750', name:'750W 80+ Gold', brand:'seasonic', wattage:750, rating:'gold', price:599, note:'游戏', official:true },
     { id:'PSU-850', name:'850W 80+ Gold', brand:'seasonic', wattage:850, rating:'gold', price:749, note:'高性能', official:true },
     { id:'PSU-1000', name:'1000W 80+ Gold', brand:'corsair', wattage:1000, rating:'gold', price:999, note:'旗舰', official:true },
-    { id:'PSU-1200', name:'1200W 80+ Platinum', brand:'corsair', wattage:1200, rating:'platinum', price:1599, note:'发烧', official:false }
+    { id:'PSU-1200', name:'1200W 80+ Platinum', brand:'corsair', wattage:1200, rating:'platinum', price:1599, note:'发烧', official:false },
+    // ======= Budget PSUs =======
+    { id:'PSU-450', name:'450W 80+ Bronze', brand:'greatwall', wattage:450, rating:'bronze', price:199, note:'经济办公', official:true },
+    { id:'PSU-500', name:'500W 80+ Bronze', brand:'greatwall', wattage:500, rating:'bronze', price:249, note:'入门游戏', official:true }
   ],
   cooler: [
     { id:'AIR-S', name:'风冷 四热管', brand:'deepcool', type:'air', tdpCapable:120, price:79, note:'入门', official:true },
@@ -631,13 +643,17 @@ var DB = {
     // Thermalright (利民)
     { id:'TR-AX120', name:'利民 AX120 R SE 单塔', brand:'thermalright', type:'air', tdpCapable:150, price:89, note:'性价比单塔', official:true },
     { id:'TR-FS140', name:'利民 FS140 双塔', brand:'thermalright', type:'air', tdpCapable:220, price:179, note:'性价比双塔', official:true },
-    { id:'TR-FH', name:'利民 Frozen Horizon 360', brand:'thermalright', type:'aio', tdpCapable:360, price:449, note:'性价比360水冷', official:true }
+    { id:'TR-FH', name:'利民 Frozen Horizon 360', brand:'thermalright', type:'aio', tdpCapable:360, price:449, note:'性价比360水冷', official:true },
+    // ======= Budget Cooler =======
+    { id:'AIR-B', name:'风冷 下压式', brand:'deepcool', type:'air', tdpCapable:65, price:49, note:'入门低功耗', official:true }
   ],
   case: [
     { id:'CASE-E', name:'经济型机箱 (M-ATX)', brand:'generic', formFactors:['m-atx'], maxGpuLen:300, maxCoolerHt:155, radiators:[], noise:'20-25dB', size:'m-atx', price:149, note:'经济(M-ATX/无侧透/基础风道)', official:true },
     { id:'CASE-M', name:'主流机箱 (ATX)', brand:'coolermaster', formFactors:['m-atx','atx'], maxGpuLen:350, maxCoolerHt:165, radiators:['120','240'], noise:'22-28dB', size:'atx', price:299, note:'主流(ATX/前240水冷/侧透)', official:true },
     { id:'CASE-H', name:'高性能机箱 (ATX) 散热加强', brand:'coolermaster', formFactors:['m-atx','atx'], maxGpuLen:380, maxCoolerHt:175, radiators:['120','240','360'], noise:'25-32dB', size:'atx', price:499, note:'散热加强(ATX/顶360水冷/网孔面板)', official:true },
-    { id:'CASE-F', name:'全塔工作站机箱', brand:'fractal', formFactors:['m-atx','atx','e-atx'], maxGpuLen:450, maxCoolerHt:185, radiators:['120','240','360','420'], noise:'18-25dB', size:'e-atx', price:899, note:'全塔(E-ATX/双360水冷/静音棉)', official:false }
+    { id:'CASE-F', name:'全塔工作站机箱', brand:'fractal', formFactors:['m-atx','atx','e-atx'], maxGpuLen:450, maxCoolerHt:185, radiators:['120','240','360','420'], noise:'18-25dB', size:'e-atx', price:899, note:'全塔(E-ATX/双360水冷/静音棉)', official:false },
+    // ======= Budget Case =======
+    { id:'CASE-L', name:'简约机箱 (M-ATX/ITX)', brand:'generic', formFactors:['m-atx','mini-itx'], maxGpuLen:260, maxCoolerHt:140, radiators:[], noise:'22-28dB', size:'m-atx', price:99, note:'超经济(M-ATX/无侧透/紧凑)', official:true }
   ],
   monitor: [
     { id:'MON-1080', name:'24" 1080p 165Hz IPS', brand:'generic', resolution:'1920x1080', size:24, hz:165, price:899, note:'电竞入门', official:true },
@@ -798,6 +814,11 @@ function scoreGPU(gpu, scenario) {
 }
 
 // ==================== BOTTLENECK ANALYSIS ====================
+
+// Global official filter: only include products with official warranty when warrantyMode is 'official'
+function officialFilter(item) {
+  return state.warrantyMode !== 'official' || item.official !== false;
+}
 
 function analyzeBottleneck(build, scenario, budget) {
   var cfg = scenarioConfig[scenario];
@@ -990,13 +1011,10 @@ function analyzeBottleneck(build, scenario, budget) {
 
 function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
   var cfg = scenarioConfig[scenario];
-  var build = { parts: {}, totalPrice: 0, totalTDP: 0, performanceScore: 0, summary: {} };
+  var build = { parts: {}, totalPrice: 0, totalTDP: 0, performanceScore: 0, summary: {}, warnings: [] };
   var usedBudget = 0;
   var wantECC = cfg.needECC || (memPref === 'ecc');
   var ddrOverride = memPref !== 'auto' && memPref !== 'ecc' ? memPref : null;
-  // Warranty mode filter: when 'official', only include products available at official/self-operated stores
-  var onlyOfficial = state.warrantyMode === 'official';
-  function officialFilter(item) { return !onlyOfficial || item.official !== false; }
 
   // ======= APPLE ECOSYSTEM (独立选购) =======
   if (scenario === 'apple') {
@@ -1082,13 +1100,20 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
     if (!officialFilter(c)) return false;
     return true;
   });
+  if (cpuPool.length === 0) {
+    build.warnings.push('当前品牌偏好+官方保修下无可用CPU，请提升预算或切换至全渠道');
+    cpuPool = [{ id:'none', name:'无可用CPU', brand:'none', cores:0, threads:0, boost:0, tdp:0, singleScore:0, multiScore:0, igpu:false, price:0, socket:'LGA1851', gen:'', note:'预算不足', official:true }];
+  }
   cpuPool.sort(function(a, b) { return scoreCPU(b, scenario) - scoreCPU(a, scenario); });
   var cpu = null;
   for (var i = 0; i < cpuPool.length; i++) {
     var maxCpuPrice = budget * 0.25;
     if (cpuPool[i].price <= maxCpuPrice) { cpu = cpuPool[i]; break; }
   }
-  if (!cpu) cpu = cpuPool[cpuPool.length - 1];
+  if (!cpu) {
+    cpu = cpuPool[cpuPool.length - 1];
+    if (cpu.price > 0) build.warnings.push('CPU价格('+cpu.price+')超出预算上限('+Math.round(budget*0.25)+')，建议提升预算');
+  }
   build.parts.cpu = cpu;
   usedBudget += cpu.price;
 
@@ -1139,6 +1164,10 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
     if (!officialFilter(g)) return false;
     return true;
   });
+  if (gpuPool.length === 0) {
+    build.warnings.push('当前品牌偏好+官方保修下无可用GPU，请提升预算或切换至全渠道');
+    gpuPool = [{ id:'none', name:'无可用GPU', brand:'none', vram:0, cuda:0, boost:0, tdp:0, gameScore:0, aiScore:0, price:0, note:'预算不足', official:true, len:0, slots:0 }];
+  }
   var gpu = null;
   var remaining = budget - usedBudget;
   var maxGpuPrice = remaining * 0.7;
@@ -1158,6 +1187,9 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
       }
     }
     if (!gpu) { gpu = gpuPool[gpuPool.length - 1]; }
+    if (gpu && gpu.price > maxGpuPrice && gpu.price > 0) {
+      build.warnings.push('GPU价格('+gpu.price+')超出预算上限('+Math.round(maxGpuPrice)+')，建议提升预算或切换全渠道');
+    }
     if (scenario === 'ai' && gpu && gpu.vram < 12) {
       for (var gi2 = 0; gi2 < gpuPool.length; gi2++) {
         if (gpuPool[gi2].vram >= 12 && gpuPool[gi2].price <= maxGpuPrice * 1.2) { gpu = gpuPool[gi2]; break; }
@@ -1218,6 +1250,10 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
 
   // ---- Cooler ----
   var coolerPool = DB.cooler.slice().filter(function(c) { return officialFilter(c) && (state.coolerBrand === 'auto' || c.brand === state.coolerBrand); });
+  if (coolerPool.length === 0) {
+    build.warnings.push('当前品牌偏好+官方保修下无可用散热器，请切换至全渠道');
+    coolerPool = [{ id:'none', name:'无可用散热器', type:'air', tdpCapable:999, price:0, note:'缺货', official:true }];
+  }
   if (cpu.tdp >= 200) {
     if (budget > 10000 && cpu.tdp >= 250) {
       build.parts.cooler = coolerPool.find(function(c) { return c.type === 'aio' && c.id.includes('360'); }) || coolerPool[coolerPool.length - 1];
@@ -1267,6 +1303,10 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
     psuPool = DB.psu.slice().filter(function(p) { return officialFilter(p) && (state.psuBrand === 'auto' || p.brand === state.psuBrand); });
     psuPool.sort(function(a, b) { return b.wattage - a.wattage; });
   }
+  if (psuPool.length === 0) {
+    build.warnings.push('当前品牌偏好+官方保修下无可用电源，请切换至全渠道');
+    psuPool = [{ id:'none', name:'无可用电源', brand:'none', wattage:0, rating:'', price:0, note:'缺货', official:true }];
+  }
   var psu = psuPool[0];
   for (var pi = 0; pi < psuPool.length; pi++) {
     if (psuPool[pi].wattage >= minWatt && psuPool[pi].price <= (budget - usedBudget + psuPool[pi].price) * 0.5) {
@@ -1286,6 +1326,10 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
     if (state.caseSize !== 'auto' && c.size !== state.caseSize) return false;
     return true;
   });
+  if (casePool.length === 0) {
+    build.warnings.push('当前品牌+尺寸偏好+官方保修下无可用机箱，请切换至全渠道');
+    casePool = [{ id:'none', name:'无可用机箱', brand:'none', formFactors:['m-atx','atx'], maxGpuLen:999, maxCoolerHt:999, radiators:[], size:'atx', price:0, note:'预算不足', official:true }];
+  }
   var case_ = casePool[0];
   var caseBudget2 = scenario === 'office' ? 200 : (budget > 15000 ? 600 : 400);
   for (var ci = 0; ci < casePool.length; ci++) {
@@ -1460,7 +1504,14 @@ function goStep(n) {
     state.brandPref = document.getElementById('brandPref').value;
     state.memPref = document.getElementById('memPref').value;
     state.mbBrand = document.getElementById('mbBrand').value;
-    rebuild();
+    try {
+      rebuild();
+    } catch(e) {
+      console.error('goStep(3) rebuild error:', e);
+      alert('\u751f\u6210\u914d\u7f6e\u5931\u8d25\uff1a' + e.message + '\n\n\u8bf7\u6253\u5f00\u6d4f\u89c8\u5668\u63a7\u5236\u53f0(F12) \u67e5\u770b\u5b8c\u6574\u9519\u8bef\u4fe1\u606f\u3002');
+      goStep._active = false;
+      return;
+    }
   }
   currentStep = n;
   document.querySelectorAll('.step-content').forEach(function(el) {
@@ -1674,6 +1725,18 @@ function renderStep3(build) {
   // --- Labels ---
   document.getElementById('step3ScenarioLabel').textContent = cfg.label;
   document.getElementById('step3BudgetLabel').textContent = '\u00a5' + budget.toLocaleString();
+
+  // --- Warnings ---
+  var warnDiv = document.getElementById('step3Warnings');
+  if (build.warnings && build.warnings.length > 0) {
+    var warnHtml = build.warnings.map(function(w) {
+      return '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fcebeb;border-radius:6px;font-size:12px;color:#a32d2d;"><span>&#9888;</span><span>' + w + '</span></div>';
+    }).join('<div style="height:6px;"></div>');
+    warnDiv.innerHTML = warnHtml;
+    warnDiv.style.display = '';
+  } else {
+    warnDiv.style.display = 'none';
+  }
 
   // --- Performance Metrics Grid ---
   var perfGrid = document.getElementById('step3PerfGrid');
