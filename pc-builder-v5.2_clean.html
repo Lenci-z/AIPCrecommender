@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<!-- saved from url=(0071)file:///C:/Users/admin/Desktop/git/AIPCrecommender/pc-builder-v5.2.html -->
-<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI 智能组机推荐 - PC Builder</title>
 <style>
@@ -173,13 +173,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 
   <!-- Step Indicator -->
   <div class="steps" id="stepIndicator">
-    <div class="step-item done" data-step="1"><span class="step-num">1</span> 选择用途</div>
-    <div class="step-item done" data-step="2"><span class="step-num">2</span> 预算与偏好</div>
-    <div class="step-item active" data-step="3"><span class="step-num">3</span> 配置方案</div>
+    <div class="step-item active" data-step="1"><span class="step-num">1</span> 选择用途</div>
+    <div class="step-item" data-step="2"><span class="step-num">2</span> 预算与偏好</div>
+    <div class="step-item" data-step="3"><span class="step-num">3</span> 配置方案</div>
   </div>
 
   <!-- ======================= STEP 1: 选择用途 ======================= -->
-  <div class="step-content" id="step1">
+  <div class="step-content active" id="step1">
     <div style="margin-bottom:16px;font-size:14px;font-weight:500;">请选择你的主要使用场景：</div>
     <div class="step-pick-card" id="scenarioGrid">
       <div class="scenario-card active" data-scenario="gaming" onclick="selectScenarioStep(&#39;gaming&#39;)">
@@ -373,7 +373,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
   </div>
 
   <!-- ======================= STEP 3: 配置方案 ======================= -->
-  <div class="step-content active" id="step3">
+  <div class="step-content" id="step3">
     <!-- Scenario label -->
     <div style="margin-bottom:12px;font-size:13px;color:#86868b;">使用场景: <strong id="step3ScenarioLabel" style="color:#1d1d1f;">日常办公方案</strong> | 预算: <strong id="step3BudgetLabel" style="color:#0071e3;">¥15,000</strong></div>
 
