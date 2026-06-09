@@ -527,7 +527,8 @@ var DB = {
     // ======= NVIDIA RTX 50 Series (Blackwell, 2025-2026) =======
     { id:'RTX5060', name:'NVIDIA RTX 5060', brand:'nvidia', vram:8, cuda:4608, boost:2520, tdp:150, gameScore:16000, aiScore:18000, price:2399, note:'1080p甜品', official:true, source:'nvidia+jd', launchPrice:2599, launchDate:'2025-05', len:240, slots:2 },
     { id:'RTX5060Ti-8', name:'NVIDIA RTX 5060 Ti 8G', brand:'nvidia', vram:8, cuda:6400, boost:2580, tdp:180, gameScore:19000, aiScore:23000, price:2999, note:'2K入门', official:true, source:'nvidia+jd', launchPrice:3199, launchDate:'2025-04', len:260, slots:2 },
-    { id:'RTX5060Ti-16', name:'NVIDIA RTX 5060 Ti 16G', brand:'nvidia', vram:16, cuda:6400, boost:2580, tdp:180, gameScore:19500, aiScore:24000, price:3699, note:'AI入门16G', official:true, source:'nvidia+jd+gkw', launchPrice:3999, launchDate:'2025-04', len:280, slots:2 },
+    { id:'RTX5060', name:'NVIDIA RTX 5060 8G', brand:'nvidia', vram:8, cuda:4608, boost:2520, tdp:150, gameScore:16500, aiScore:18000, price:2399, note:'1080p甜点', official:true, source:'nvidia+jd+gkw', launchPrice:2599, launchDate:'2025-06', len:260, slots:2 },
+    { id:'RTX5060Ti-16', name:'NVIDIA RTX 5060 Ti 16G', brand:'nvidia', vram:16, cuda:6400, boost:2580, tdp:180, gameScore:19500, aiScore:24000, price:2999, note:'AI入门16G', official:true, source:'nvidia+jd+gkw', launchPrice:3999, launchDate:'2025-04', len:280, slots:2 },
     { id:'RTX5070', name:'NVIDIA RTX 5070', brand:'nvidia', vram:12, cuda:6400, boost:2650, tdp:220, gameScore:24000, aiScore:28000, price:4499, note:'2K高帧率', official:true, source:'nvidia+jd+gkw', launchPrice:4899, launchDate:'2025-03', len:290, slots:2.5 },
     { id:'RTX5070Ti', name:'NVIDIA RTX 5070 Ti', brand:'nvidia', vram:16, cuda:8960, boost:2720, tdp:300, gameScore:28000, aiScore:36000, price:6299, note:'4K入门', official:true, source:'nvidia+jd+gkw', launchPrice:6899, launchDate:'2025-02', len:310, slots:3 },
     { id:'RTX5080', name:'NVIDIA RTX 5080', brand:'nvidia', vram:16, cuda:10752, boost:2800, tdp:360, gameScore:33000, aiScore:45000, price:8599, note:'4K高帧率', official:true, source:'nvidia+jd+gkw', launchPrice:9299, launchDate:'2025-02', len:330, slots:3 },
@@ -565,7 +566,12 @@ var DB = {
     { id:'RX580', name:'AMD RX 580 8G', brand:'amd', vram:8, cuda:2304, boost:1340, tdp:185, gameScore:5500, aiScore:1200, price:299, note:'A卡经典', official:false, source:'amd', launchPrice:1899, launchDate:'2017-04' },
     // ======= Budget GPUs (official, sub-2000) =======
     { id:'RTX3050-6G', name:'NVIDIA RTX 3050 6G', brand:'nvidia', vram:6, cuda:2304, boost:1470, tdp:70, gameScore:7500, aiScore:6000, price:1499, note:'1080p入门', official:true, source:'nvidia+jd', launchPrice:1699, launchDate:'2024-02', len:220, slots:2 },
-    { id:'RX6600', name:'AMD Radeon RX 6600', brand:'amd', vram:8, cuda:1792, boost:2491, tdp:132, gameScore:12000, aiScore:8000, price:1599, note:'1080p性价比选', official:true, source:'amd+jd', launchPrice:1899, launchDate:'2021-10', len:240, slots:2 }
+    { id:'RX6600', name:'AMD Radeon RX 6600', brand:'amd', vram:8, cuda:1792, boost:2491, tdp:132, gameScore:12000, aiScore:8000, price:1599, note:'1080p性价比选', official:true, source:'amd+jd', launchPrice:1899, launchDate:'2021-10', len:240, slots:2 },
+    // ======= Board Partner Brands (京东/天猫官方自营) =======
+    { id:'ASUS-RTX5070', name:'华硕 TUF RTX 5070 O12G', brand:'asus', vram:12, cuda:6400, boost:2670, tdp:220, gameScore:24000, aiScore:28000, price:4799, note:'华硕TUF 2K', official:true, source:'asus+jd', launchPrice:5199, launchDate:'2025-03', len:300, slots:2.5 },
+    { id:'MSI-RTX5070Ti', name:'微星 RTX 5070 Ti 16G VENTUS', brand:'msi', vram:16, cuda:8960, boost:2740, tdp:300, gameScore:28000, aiScore:36000, price:6599, note:'微星4K入门', official:true, source:'msi+jd', launchPrice:7199, launchDate:'2025-02', len:320, slots:3 },
+    { id:'GIGA-RTX5080', name:'技嘉 RTX 5080 GAMING OC 16G', brand:'gigabyte', vram:16, cuda:10752, boost:2820, tdp:360, gameScore:33000, aiScore:45000, price:8899, note:'技嘉风之力散热', official:true, source:'gigabyte+jd', launchPrice:9599, launchDate:'2025-02', len:340, slots:3 },
+    { id:'COL-RTX5090D', name:'七彩虹 iGame RTX 5090 D 32G', brand:'colorful', vram:32, cuda:17000, boost:2880, tdp:500, gameScore:38000, aiScore:75000, price:16999, note:'七彩虹旗舰', official:true, source:'colorful+jd', launchPrice:18499, launchDate:'2025-02', len:360, slots:3.5 }
   ],
   ram: [
     { id:'D4-16-3200', name:'DDR4 16GB 3200MHz', brand:'generic', capacity:16, gen:'ddr4', freq:3200, ecc:false, price:229, note:'经济', official:true, launchPrice:299, launchDate:'2022-01' },
@@ -606,7 +612,11 @@ var DB = {
     { id:'WD-2T', name:'WD Black SN850X 2TB', brand:'westerndigital', capacity:2048, seqRead:7300, price:1099, note:'大容量高速', official:true, launchPrice:1499, launchDate:'2023-09' },
     { id:'ZHI-1T', name:'致态 TiPro7000 1TB', brand:'zhitai', capacity:1024, seqRead:7400, price:549, note:'国产高速', official:true, launchPrice:699, launchDate:'2024-03' },
     { id:'ZHI-2T', name:'致态 TiPro7000 2TB', brand:'zhitai', capacity:2048, seqRead:7400, price:999, note:'国产大容量', official:true, launchPrice:1299, launchDate:'2024-03' },
-    { id:'SATA-2T', name:'SATA SSD 2TB', brand:'generic', capacity:2048, seqRead:560, price:799, note:'游戏仓储', official:true, launchPrice:999, launchDate:'2022-06' }
+    { id:'SATA-2T', name:'SATA SSD 2TB', brand:'generic', capacity:2048, seqRead:560, price:799, note:'游戏仓储', official:true, launchPrice:999, launchDate:'2022-06' },
+    // ======= More Storage Brands (京东自营) =======
+    { id:'KS-NV2-1T', name:'金士顿 NV2 1TB PCIe 4.0', brand:'kingston', capacity:1024, seqRead:3500, price:429, note:'入门PCIe4.0', official:true, launchPrice:549, launchDate:'2024-01' },
+    { id:'WD-SN580-1T', name:'WD Blue SN580 1TB PCIe 4.0', brand:'westerndigital', capacity:1024, seqRead:4150, price:469, note:'蓝盘主流', official:true, launchPrice:599, launchDate:'2024-03' },
+    { id:'ZHI-Ti600-2T', name:'致态 Ti600 2TB PCIe 4.0', brand:'zhitai', capacity:2048, seqRead:7000, price:849, note:'国产QLC大容量', official:true, launchPrice:1099, launchDate:'2024-06' }
   ],
   mb: [
     { id:'Z890-A', name:'华硕 ROG Z890-A GAMING', brand:'asus', formFactor:'atx', chipset:'Z890', socket:'LGA1851', ddr:'ddr5', ddrMax:256, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:false, price:2999, note:'Intel旗舰D5', reason:'顶级PCIe 5.0+20相供电+WiFi7，适合i9-285K超频与游戏旗舰', official:true, source:'asus+jd' },
@@ -636,7 +646,13 @@ var DB = {
     { id:'PSU-1200', name:'1200W 80+ Platinum', brand:'corsair', wattage:1200, rating:'platinum', price:1599, note:'发烧', official:false },
     // ======= Budget PSUs =======
     { id:'PSU-450', name:'450W 80+ Bronze', brand:'greatwall', wattage:450, rating:'bronze', price:199, note:'经济办公', official:true },
-    { id:'PSU-500', name:'500W 80+ Bronze', brand:'greatwall', wattage:500, rating:'bronze', price:249, note:'入门游戏', official:true }
+    { id:'PSU-500', name:'500W 80+ Bronze', brand:'greatwall', wattage:500, rating:'bronze', price:249, note:'入门游戏', official:true },
+    // ======= More PSU Brands (京东自营) =======
+    { id:'PSU-650-G', name:'650W 80+ Gold (长城)', brand:'greatwall', wattage:650, rating:'gold', price:399, note:'主流金牌', official:true },
+    { id:'PSU-750-G', name:'750W 80+ Gold (微星)', brand:'msi', wattage:750, rating:'gold', price:549, note:'MSI金牌全模组', official:true },
+    { id:'PSU-850-EVGA', name:'850W 80+ Gold (EVGA)', brand:'evga', wattage:850, rating:'gold', price:699, note:'EVGA G7金牌', official:true },
+    { id:'PSU-1000-BQ', name:'1000W 80+ Gold (be quiet!)', brand:'bequiet', wattage:1000, rating:'gold', price:1099, note:'德系静音', official:true },
+    { id:'PSU-1200-P', name:'1200W 80+ Platinum (海韵)', brand:'seasonic', wattage:1200, rating:'platinum', price:1899, note:'旗舰白金', official:true }
   ],
   cooler: [
     { id:'AIR-S', name:'风冷 四热管', brand:'deepcool', type:'air', tdpCapable:120, price:79, note:'入门', official:true },
@@ -649,7 +665,12 @@ var DB = {
     { id:'TR-FS140', name:'利民 FS140 双塔', brand:'thermalright', type:'air', tdpCapable:220, price:179, note:'性价比双塔', official:true },
     { id:'TR-FH', name:'利民 Frozen Horizon 360', brand:'thermalright', type:'aio', tdpCapable:360, price:449, note:'性价比360水冷', official:true },
     // ======= Budget Cooler =======
-    { id:'AIR-B', name:'风冷 下压式', brand:'deepcool', type:'air', tdpCapable:65, price:49, note:'入门低功耗', official:true }
+    { id:'AIR-B', name:'风冷 下压式', brand:'deepcool', type:'air', tdpCapable:65, price:49, note:'入门低功耗', official:true },
+    // ======= More Cooler Brands (京东自营) =======
+    { id:'AIR-NH-D15', name:'Noctua NH-D15 双塔', brand:'noctua', type:'air', tdpCapable:250, price:599, note:'风冷之王', official:true },
+    { id:'AIR-DR4', name:'be quiet! Dark Rock 4', brand:'bequiet', type:'air', tdpCapable:200, price:399, note:'德系静音风冷', official:true },
+    { id:'AIO-360-NZXT', name:'NZXT Kraken 360 RGB', brand:'nzxt', type:'aio', tdpCapable:380, price:899, note:'旗舰RGB水冷', official:true },
+    { id:'AIO-240-ARCTIC', name:'Arctic Liquid Freezer III 240', brand:'arctic', type:'aio', tdpCapable:280, price:349, note:'性价比水冷', official:true }
   ],
   case: [
     { id:'CASE-E', name:'经济型机箱 (M-ATX)', brand:'generic', formFactors:['m-atx'], maxGpuLen:300, maxCoolerHt:155, radiators:[], noise:'20-25dB', size:'m-atx', price:149, note:'经济(M-ATX/无侧透/基础风道)', official:true },
@@ -657,7 +678,12 @@ var DB = {
     { id:'CASE-H', name:'高性能机箱 (ATX) 散热加强', brand:'coolermaster', formFactors:['m-atx','atx'], maxGpuLen:380, maxCoolerHt:175, radiators:['120','240','360'], noise:'25-32dB', size:'atx', price:499, note:'散热加强(ATX/顶360水冷/网孔面板)', official:true },
     { id:'CASE-F', name:'全塔工作站机箱', brand:'fractal', formFactors:['m-atx','atx','e-atx'], maxGpuLen:450, maxCoolerHt:185, radiators:['120','240','360','420'], noise:'18-25dB', size:'e-atx', price:899, note:'全塔(E-ATX/双360水冷/静音棉)', official:false },
     // ======= Budget Case =======
-    { id:'CASE-L', name:'简约机箱 (M-ATX/ITX)', brand:'generic', formFactors:['m-atx','mini-itx'], maxGpuLen:260, maxCoolerHt:140, radiators:[], noise:'22-28dB', size:'m-atx', price:99, note:'超经济(M-ATX/无侧透/紧凑)', official:true }
+    { id:'CASE-L', name:'简约机箱 (M-ATX/ITX)', brand:'generic', formFactors:['m-atx','mini-itx'], maxGpuLen:260, maxCoolerHt:140, radiators:[], noise:'22-28dB', size:'m-atx', price:99, note:'超经济(M-ATX/无侧透/紧凑)', official:true },
+    // ======= More Case Brands (京东自营) =======
+    { id:'CASE-NX7', name:'NZXT H7 Flow (ATX)', brand:'nzxt', formFactors:['atx'], maxGpuLen:400, maxCoolerHt:185, radiators:['120','240','360'], noise:'20-28dB', size:'atx', price:699, note:'NZXT高风量(ATX/钢化玻璃/理线)', official:true },
+    { id:'CASE-MB520', name:'酷冷至尊 MB520 (ATX)', brand:'coolermaster', formFactors:['m-atx','atx'], maxGpuLen:360, maxCoolerHt:165, radiators:['120','240','360'], noise:'22-30dB', size:'atx', price:399, note:'酷冷ARGB(ATX/前网孔/标配3风扇), official:true },
+    { id:'CASE-L216', name:'联力 LANCOOL 216 (ATX)', brand:'lianli', formFactors:['m-atx','atx','e-atx'], maxGpuLen:392, maxCoolerHt:180, radiators:['120','240','360'], noise:'20-28dB', size:'atx', price:499, note:'联力气流大师(ATX/前200mm扇/免工具), official:true },
+    { id:'CASE-FD-M', name:'Fractal Design Meshify 2 Compact', brand:'fractal', formFactors:['m-atx','atx'], maxGpuLen:341, maxCoolerHt:169, radiators:['120','240','280','360'], noise:'18-25dB', size:'atx', price:699, note:'FD北欧极简(ATX/网孔/静音棉), official:true }
   ],
   monitor: [
     { id:'MON-1080', name:'24" 1080p 165Hz IPS', brand:'generic', resolution:'1920x1080', size:24, hz:165, price:899, note:'电竞入门', official:true },
@@ -2025,7 +2051,12 @@ function renderBottleneck(bn) {
       });
       html += '</div>';
     }
-    if (data.fix && !upgradeOptions) html += '<div class="bn-fix">&#128161; ' + data.fix + '</div>';
+    if (data.fix && !upgradeOptions) {
+      // No upgrade options found in DB → show "no solution" notice
+      html += '<div style="margin-top:8px;padding:8px 10px;background:#fef0ef;border-radius:6px;font-size:11px;color:#a32d2d;border:0.5px solid #f5c6cb;">';
+      html += '<span style="font-weight:500;">&#128683; \u73b0\u9636\u6bb5\u6ca1\u6709\u53ef\u4ee5\u89e3\u51b3\u8be5\u74f6\u9888\u7684\u4ea7\u54c1\uff08\u5f53\u524d\u7b5b\u9009\u6761\u4ef6\u4e0b\uff09\uff0c\u53ef\u4ee5\u7b49\u5f85\u540e\u7eed\u786c\u4ef6\u5347\u7ea7</span>';
+      html += '</div>';
+    }
     html += '</div>';
   });
   // Add price summary row
