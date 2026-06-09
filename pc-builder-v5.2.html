@@ -121,6 +121,40 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .data-badge.gkw { background:#e3f2fd; color:#1565c0; }
 .data-badge.jd { background:#e8f5e9; color:#2e7d32; }
 .data-badge.off { background:#f3e5f5; color:#7b1fa2; }
+/* Step wizard */
+.steps { display:flex; justify-content:center; gap:0; margin:0 auto 24px; max-width:700px; }
+.step-item { flex:1; text-align:center; padding:12px 8px; position:relative; font-size:13px; font-weight:500; color:#86868b; background:#f5f5f7; border-right:1px solid #e8e8ed; transition:all 0.3s; }
+.step-item:first-child { border-radius:10px 0 0 10px; }
+.step-item:last-child { border-radius:0 10px 10px 0; border-right:none; }
+.step-item .step-num { display:inline-flex; width:24px; height:24px; border-radius:50%; background:#d2d2d7; color:#fff; align-items:center; justify-content:center; font-size:12px; font-weight:600; margin-right:6px; transition:all 0.3s; }
+.step-item.active { color:#0071e3; background:#e8f0fe; }
+.step-item.active .step-num { background:#0071e3; }
+.step-item.done { color:#34c759; background:#e8f5e9; }
+.step-item.done .step-num { background:#34c759; }
+.step-content { display:none; }
+.step-content.active { display:block; }
+.step-nav { display:flex; justify-content:space-between; margin-top:20px; }
+.step-nav .btn { min-width:120px; }
+.step-nav .btn:disabled { opacity:0.4; cursor:not-allowed; }
+.step-pick-card { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+.step-pick-card .scenario-card { background:#fff; border:2px solid transparent; border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.06); text-align:center; }
+.step-pick-card .scenario-card:hover { border-color:#0071e3; transform:translateY(-2px); }
+.step-pick-card .scenario-card.active { border-color:#0071e3; background:#f0f7ff; }
+@media (max-width:768px) { .step-pick-card { grid-template-columns:repeat(2,1fr); } .steps { flex-direction:column; border-radius:10px; overflow:hidden; } .step-item { border-right:none; border-bottom:1px solid #e8e8ed; } }
+/* Perf cards in step 3 */
+.perf-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; padding:16px 0; }
+.perf-card { background:#f5f5f7; border-radius:10px; padding:12px; text-align:center; }
+.perf-card .p-label { font-size:11px; color:#86868b; }
+.perf-card .p-value { font-size:18px; font-weight:700; margin-top:2px; }
+.perf-card .p-value.green { color:#34c759; }
+.perf-card .p-value.blue { color:#0071e3; }
+.perf-card .p-value.orange { color:#ff9500; }
+.perf-card .p-value.red { color:#ff3b30; }
+.price-breakdown { width:100%; border-collapse:collapse; font-size:13px; margin-top:12px; }
+.price-breakdown th { padding:8px 12px; text-align:left; font-weight:500; font-size:11px; color:#86868b; border-bottom:1px solid #e8e8ed; background:#fafafa; }
+.price-breakdown td { padding:8px 12px; border-bottom:1px solid #f0f0f0; }
+.price-breakdown .total-row { background:#f0f7ff; font-weight:600; }
+.price-breakdown .total-row td { padding:10px 12px; }
 </style>
 </head>
 <body>
@@ -128,7 +162,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 <div class="container">
   <div class="header">
     <h1>AI 智能组机推荐</h1>
-    <p>根据使用场景、预算和个性化权重自动匹配最优配置，实时分析性能瓶颈
+    <p>三步完成你的专属配置 | 根据使用场景智能匹配最优方案
     <span style="opacity:0.6;margin-left:12px;font-size:12px;">
       数据源: <span class="data-badge off">官方规格</span>
       <span class="data-badge gkw">极客湾</span>
@@ -137,363 +171,296 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
     </span></p>
   </div>
 
-  <!-- Scenario -->
-  <div class="scenario-grid" id="scenarioGrid">
-    <div class="scenario-card active" data-scenario="gaming" onclick="selectScenario('gaming')">
-      <div class="icon">&#127918;</div>
-      <div class="name">游戏</div>
-      <div class="desc">高帧率 / 高画质 / 3A大作</div>
-    </div>
-    <div class="scenario-card" data-scenario="productivity" onclick="selectScenario('productivity')">
-      <div class="icon">&#128187;</div>
-      <div class="name">生产力 / 工作站</div>
-      <div class="desc">视频剪辑 / 3D渲染 / 编程</div>
-    </div>
-    <div class="scenario-card" data-scenario="ai" onclick="selectScenario('ai')">
-      <div class="icon">&#129302;</div>
-      <div class="name">AI / 深度学习</div>
-      <div class="desc">大模型推理 / 训练 / 数据科学</div>
-    </div>
-    <div class="scenario-card" data-scenario="office" onclick="selectScenario('office')">
-      <div class="icon">&#128188;</div>
-      <div class="name">日常办公</div>
-      <div class="desc">文档 / 网页 / 轻度图像处理</div>
-    </div>
-    <div class="scenario-card" data-scenario="apple" onclick="selectScenario('apple')" style="background:linear-gradient(135deg,#f5f5f7,#fff);">
-      <div class="icon">&#63743;</div>
-      <div class="name">Apple 生态</div>
-      <div class="desc">Mac Studio / 统一内存 / AI创作</div>
-    </div>
+  <!-- Step Indicator -->
+  <div class="steps" id="stepIndicator">
+    <div class="step-item active" data-step="1"><span class="step-num">1</span> 选择用途</div>
+    <div class="step-item" data-step="2"><span class="step-num">2</span> 预算与偏好</div>
+    <div class="step-item" data-step="3"><span class="step-num">3</span> 配置方案</div>
   </div>
 
-  <!-- Apple Model Selector (shown only in apple scenario) -->
-  <div id="appleModelSelector" style="display:none;margin-bottom:20px;">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-      <span style="font-size:16px;font-weight:600;">&#63743; 选择 Mac Studio 型号</span>
-      <span style="font-size:11px;color:#86868b;">点击型号切换配置</span>
+  <!-- ======================= STEP 1: 选择用途 ======================= -->
+  <div class="step-content active" id="step1">
+    <div style="margin-bottom:16px;font-size:14px;font-weight:500;">请选择你的主要使用场景：</div>
+    <div class="step-pick-card" id="scenarioGrid">
+      <div class="scenario-card active" data-scenario="gaming" onclick="selectScenarioStep('gaming')">
+        <div class="icon">&#127918;</div>
+        <div class="name">游戏</div>
+        <div class="desc">高帧率 / 高画质 / 3A大作</div>
+      </div>
+      <div class="scenario-card" data-scenario="productivity" onclick="selectScenarioStep('productivity')">
+        <div class="icon">&#128187;</div>
+        <div class="name">生产力 / 工作站</div>
+        <div class="desc">视频剪辑 / 3D渲染 / 编程</div>
+      </div>
+      <div class="scenario-card" data-scenario="ai" onclick="selectScenarioStep('ai')">
+        <div class="icon">&#129302;</div>
+        <div class="name">AI / 深度学习</div>
+        <div class="desc">大模型推理 / 训练 / 数据科学</div>
+      </div>
+      <div class="scenario-card" data-scenario="office" onclick="selectScenarioStep('office')">
+        <div class="icon">&#128188;</div>
+        <div class="name">日常办公</div>
+        <div class="desc">文档 / 网页 / 轻度图像处理</div>
+      </div>
     </div>
-    <div id="appleCompareGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:12px;"></div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <span style="font-size:12px;color:#86868b;">&#128187; 外设配置:</span>
-      <button class="mode-btn active" data-amode="full" onclick="setAppleBuildMode('full')" style="padding:5px 14px;font-size:11px;border:0.5px solid #0071e3;border-radius:6px;background:#e8f0fe;cursor:pointer;color:#0071e3;font-weight:500;">&#128187; 全套 (含外设)</button>
-      <button class="mode-btn" data-amode="components" onclick="setAppleBuildMode('components')" style="padding:5px 14px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:6px;background:#fff;cursor:pointer;">&#128083; 仅主机</button>
-      <span id="applePerfHint" style="font-size:11px;color:#86868b;margin-left:8px;"></span>
+    <!-- Apple card separate -->
+    <div style="display:flex;gap:12px;margin-bottom:20px;">
+      <div class="scenario-card" data-scenario="apple" onclick="selectScenarioStep('apple')" style="background:linear-gradient(135deg,#f5f5f7,#fff);flex:1;max-width:200px;">
+        <div class="icon">&#63743;</div>
+        <div class="name">Apple 生态</div>
+        <div class="desc">Mac Studio / 统一内存 / AI创作</div>
+      </div>
     </div>
-  </div>
-
-  <!-- Controls (hidden for apple) -->
-  <div class="controls" id="mainControls">
-    <div class="control-group" style="flex:1.5;min-width:300px;">
-      <label>预算 (含全部配件) — <span id="budgetTier" style="color:#0071e3;font-weight:600;">经济型</span></label>
+    <!-- Apple Model Selector (shown only in apple scenario) -->
+    <div id="appleModelSelector" style="display:none;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <span style="font-size:15px;font-weight:600;">&#63743; 选择 Mac Studio 型号</span>
+        <span style="font-size:11px;color:#86868b;">点击型号切换配置</span>
+      </div>
+      <div id="appleCompareGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:10px;"></div>
+    </div>
+    <!-- Apple build mode -->
+    <div id="appleBuildControls" style="display:none;margin-bottom:16px;">
       <div style="display:flex;align-items:center;gap:8px;">
-        <input type="range" id="budgetSlider" min="3000" max="50000" step="500" value="8000" oninput="syncBudget('slider')" style="flex:1;min-width:120px;">
-        <input type="number" id="budgetInput" value="8000" min="1000" step="500" oninput="syncBudget('input')" style="width:100px;padding:6px 10px;border:1px solid #d2d2d7;border-radius:8px;font-size:14px;text-align:right;outline:none;" onfocus="this.select()">
-        <span class="budget-display" id="budgetDisplay">&#165;8,000</span>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
-        <button class="budget-preset" onclick="setBudget(3000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;3K</button>
-        <button class="budget-preset" onclick="setBudget(5000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;5K</button>
-        <button class="budget-preset" onclick="setBudget(8000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;8K</button>
-        <button class="budget-preset" onclick="setBudget(10000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;10K</button>
-        <button class="budget-preset" onclick="setBudget(15000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;15K</button>
-        <button class="budget-preset" onclick="setBudget(20000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;20K</button>
-        <button class="budget-preset" onclick="setBudget(25000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;25K</button>
-        <button class="budget-preset" onclick="setBudget(30000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;30K</button>
-        <button class="budget-preset" onclick="setBudget(35000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;35K</button>
-        <button class="budget-preset" onclick="setBudget(40000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;40K</button>
-        <button class="budget-preset" onclick="setBudget(50000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;50K</button>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;">
-        <span style="color:#86868b;">预算弹性:</span>
-        <button class="flex-btn active" data-flex="0" onclick="setBudgetFlex(0)" style="padding:2px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">不浮动</button>
-        <button class="flex-btn" data-flex="500" onclick="setBudgetFlex(500)" style="padding:2px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">+&#165;500</button>
-        <button class="flex-btn" data-flex="1000" onclick="setBudgetFlex(1000)" style="padding:2px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">+&#165;1000</button>
-        <span id="flexHint" style="color:#86868b;font-size:10px;">实际可用: &#165;8,000</span>
+        <span style="font-size:12px;color:#86868b;">&#128187; 外设配置:</span>
+        <button class="mode-btn active" data-amode="full" onclick="setAppleBuildMode('full')" style="padding:5px 14px;font-size:11px;border:0.5px solid #0071e3;border-radius:6px;background:#e8f0fe;cursor:pointer;color:#0071e3;font-weight:500;">&#128187; 全套 (含外设)</button>
+        <button class="mode-btn" data-amode="components" onclick="setAppleBuildMode('components')" style="padding:5px 14px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:6px;background:#fff;cursor:pointer;">&#128083; 仅主机</button>
+        <span id="applePerfHint" style="font-size:11px;color:#86868b;margin-left:8px;"></span>
       </div>
     </div>
-    <div class="control-group" id="aiModelGroup" style="display:none;">
-      <label>&#129302; 目标AI模型</label>
-      <select id="aiModelSize" onchange="rebuild()" style="font-size:11px;">
-        <option value="auto">自动推荐</option>
-        <option value="7B">7B 小模型 (LLaMA 2/3 7B, Qwen 7B)</option>
-        <option value="13B">13B 中等模型 (LLaMA 2 13B, Mistral)</option>
-        <option value="30B">30B 大模型 (Yi 34B, Llama 30B)</option>
-        <option value="70B">70B 旗舰模型 (LLaMA 2 70B, Qwen 72B)</option>
-        <option value="120B">120B+ 超大模型 (Mixtral 8x22B, GPT-NeoX)</option>
-      </select>
+    <div class="step-nav">
+      <div></div>
+      <button class="btn" onclick="goStep(2)">下一步 &#8594;</button>
     </div>
-    <div class="control-group">
-      <label>品牌偏好</label>
-      <select id="brandPref" onchange="rebuild()">
-        <option value="all">不限品牌</option>
-        <option value="intel-nvidia">Intel + NVIDIA</option>
-        <option value="amd">AMD 全家桶</option>
-        <option value="intel-amd">Intel + AMD</option>
-      </select>
-    </div>
-    <div class="control-group">
-      <label>内存架构</label>
-      <select id="memPref" onchange="rebuild()">
-        <option value="auto">自动推荐</option>
-        <option value="ddr5">DDR5 优先</option>
-        <option value="ddr4">DDR4 经济</option>
-        <option value="ecc">ECC (工作站)</option>
-      </select>
-    </div>
-    <div class="control-group">
-      <label>购买渠道</label>
-      <div class="mode-toggle" id="warrantyToggle">
-        <button class="mode-btn active" data-mode="official" onclick="setWarrantyMode('official')">&#128230; 官方自营 (保)</button>
-        <button class="mode-btn" data-mode="all" onclick="setWarrantyMode('all')">&#128176; 全渠道 (省)</button>
+  </div>
+
+  <!-- ======================= STEP 2: 预算与偏好 ======================= -->
+  <div class="step-content" id="step2">
+    <div style="margin-bottom:16px;font-size:14px;font-weight:500;">设定预算并选择偏好：</div>
+    <div class="controls" id="mainControls" style="padding:0;border:none;box-shadow:none;background:transparent;">
+      <!-- Budget -->
+      <div class="control-group" style="margin-bottom:16px;">
+        <label>预算 (仅主机，不含外设) — <span id="budgetTier" style="color:#0071e3;font-weight:600;">主流¥8K</span></label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="range" id="budgetSlider" min="3000" max="50000" step="500" value="8000" oninput="syncBudget('slider')" style="flex:1;min-width:120px;">
+          <input type="number" id="budgetInput" value="8000" min="1000" step="500" oninput="syncBudget('input')" style="width:100px;padding:6px 10px;border:1px solid #d2d2d7;border-radius:8px;font-size:14px;text-align:right;outline:none;" onfocus="this.select()">
+          <span class="budget-display" id="budgetDisplay">&#165;8,000</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
+          <button class="budget-preset" onclick="setBudget(3000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;3K</button>
+          <button class="budget-preset" onclick="setBudget(5000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;5K</button>
+          <button class="budget-preset active" onclick="setBudget(8000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #0071e3;border-radius:4px;background:#e8f0fe;cursor:pointer;color:#0071e3;font-weight:500;">&#165;8K</button>
+          <button class="budget-preset" onclick="setBudget(10000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;10K</button>
+          <button class="budget-preset" onclick="setBudget(15000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;15K</button>
+          <button class="budget-preset" onclick="setBudget(20000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;20K</button>
+          <button class="budget-preset" onclick="setBudget(25000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;25K</button>
+          <button class="budget-preset" onclick="setBudget(30000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;30K</button>
+          <button class="budget-preset" onclick="setBudget(35000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;35K</button>
+          <button class="budget-preset" onclick="setBudget(40000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;40K</button>
+          <button class="budget-preset" onclick="setBudget(50000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;50K</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+        <div class="control-group">
+          <label>品牌偏好</label>
+          <select id="brandPref" onchange="rebuild()">
+            <option value="all">不限品牌</option>
+            <option value="intel-nvidia">Intel + NVIDIA</option>
+            <option value="amd">AMD 全家桶</option>
+            <option value="intel-amd">Intel + AMD</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>内存架构</label>
+          <select id="memPref" onchange="rebuild()">
+            <option value="auto">自动推荐</option>
+            <option value="ddr5">DDR5 优先</option>
+            <option value="ddr4">DDR4 经济</option>
+            <option value="ecc">ECC (工作站)</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>购买渠道</label>
+          <div class="mode-toggle" id="warrantyToggle">
+            <button class="mode-btn active" data-mode="official" onclick="setWarrantyMode('official')">&#128230; 官方自营</button>
+            <button class="mode-btn" data-mode="all" onclick="setWarrantyMode('all')">&#128176; 全渠道</button>
+          </div>
+        </div>
+        <div class="control-group">
+          <label>主板品牌</label>
+          <select id="mbBrand" onchange="rebuild()" style="font-size:12px;">
+            <option value="auto">自动匹配</option>
+            <option value="asus">华硕 (ASUS)</option>
+            <option value="msi">微星 (MSI)</option>
+            <option value="gigabyte">技嘉 (GIGABYTE)</option>
+            <option value="asrock">华擎 (ASRock)</option>
+            <option value="maxsun">铭瑄 (MAXSUN)</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>电源品牌</label>
+          <select id="psuBrand" onchange="rebuild()" style="font-size:11px;">
+            <option value="auto">自动推荐</option>
+            <option value="greatwall">长城 (Great Wall)</option>
+            <option value="seasonic">海韵 (Seasonic)</option>
+            <option value="corsair">海盗船 (Corsair)</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>散热品牌</label>
+          <select id="coolerBrand" onchange="rebuild()" style="font-size:11px;">
+            <option value="auto">自动推荐</option>
+            <option value="deepcool">九州风神</option>
+            <option value="thermalright">利民</option>
+            <option value="noctua">猫头鹰</option>
+            <option value="corsair">海盗船</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>内存品牌</label>
+          <select id="ramBrand" onchange="rebuild()" style="font-size:11px;">
+            <option value="auto">自动推荐</option>
+            <option value="kingston">金士顿</option>
+            <option value="corsair">海盗船</option>
+            <option value="gskill">芝奇</option>
+            <option value="samsung">三星</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>存储品牌</label>
+          <select id="storageBrand" onchange="rebuild()" style="font-size:11px;">
+            <option value="auto">自动推荐</option>
+            <option value="samsung">三星</option>
+            <option value="westerndigital">西部数据</option>
+            <option value="zhitai">致态</option>
+            <option value="micron">美光</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>机箱品牌</label>
+          <select id="caseBrand" onchange="rebuild()" style="font-size:11px;">
+            <option value="auto">自动推荐</option>
+            <option value="coolermaster">酷冷至尊</option>
+            <option value="fractal">分形工艺</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>机箱尺寸</label>
+          <select id="caseSize" onchange="rebuild()" style="font-size:11px;">
+            <option value="auto">自动推荐</option>
+            <option value="m-atx">M-ATX (小型)</option>
+            <option value="atx">ATX (标准)</option>
+            <option value="e-atx">E-ATX (全塔)</option>
+          </select>
+        </div>
+        <div class="control-group" id="aiModelGroup" style="display:none;">
+          <label>&#129302; 目标AI模型</label>
+          <select id="aiModelSize" onchange="rebuild()" style="font-size:11px;">
+            <option value="auto">自动推荐</option>
+            <option value="7B">7B 小模型</option>
+            <option value="13B">13B 中等模型</option>
+            <option value="30B">30B 大模型</option>
+            <option value="70B">70B 旗舰模型</option>
+            <option value="120B">120B+ 超大模型</option>
+          </select>
+        </div>
       </div>
     </div>
-    <div class="control-group">
-      <label>主板品牌偏好</label>
-      <select id="mbBrand" onchange="rebuild()" style="font-size:12px;">
-        <option value="auto">自动匹配（按预算最优推荐）</option>
-        <option value="asus">华硕 (ASUS) — 品质标杆，ROG信仰</option>
-        <option value="msi">微星 (MSI) — 迫击炮经典，稳扎稳打</option>
-        <option value="gigabyte">技嘉 (GIGABYTE) — 用料扎实，性价比</option>
-        <option value="asrock">华擎 (ASRock) — AM5性价比之王</option>
-        <option value="maxsun">铭瑄 (MAXSUN) — 极致低价，入门首选</option>
-      </select>
+    <div class="step-nav">
+      <button class="btn btn-secondary" onclick="goStep(1)">&#8592; 上一步</button>
+      <button class="btn" onclick="goStep(3)">生成配置 &#8594;</button>
     </div>
   </div>
-  <div class="controls" style="margin-top:-8px;">
-    <div class="control-group">
-      <label>购机模式</label>
-      <div class="mode-toggle" id="buildModeToggle">
-        <button class="mode-btn active" data-mode="full" onclick="setBuildMode('full')">&#128187; 全套配置</button>
-        <button class="mode-btn" data-mode="components" onclick="setBuildMode('components')">&#128083; 仅主机</button>
+
+  <!-- ======================= STEP 3: 配置方案 ======================= -->
+  <div class="step-content" id="step3">
+    <!-- Scenario label -->
+    <div style="margin-bottom:12px;font-size:13px;color:#86868b;">使用场景: <strong id="step3ScenarioLabel" style="color:#1d1d1f;">游戏</strong> | 预算: <strong id="step3BudgetLabel" style="color:#0071e3;">&#165;8,000</strong></div>
+
+    <!-- Performance metrics -->
+    <div class="result-section">
+      <div class="section-header">
+        <h2>&#128200; 性能参考</h2>
+        <span class="section-sub" id="step3PerfNote">综合评分及关键指标</span>
+      </div>
+      <div class="perf-grid" id="step3PerfGrid"></div>
+    </div>
+
+    <!-- Component table (no peripherals) -->
+    <div class="result-section">
+      <div class="section-header">
+        <h2>配置清单</h2>
+        <span class="section-sub">仅主机核心部件（不含外设）</span>
+      </div>
+      <div style="overflow-x:auto;" class="scroll-hint">
+        <table class="component-table" id="buildTable">
+          <thead id="buildHead"></thead>
+          <tbody id="buildBody"></tbody>
+        </table>
       </div>
     </div>
-    <div class="control-group">
-      <label>电源品牌</label>
-      <select id="psuBrand" onchange="rebuild()" style="font-size:11px;">
-        <option value="auto">自动推荐</option>
-        <option value="greatwall">长城 (Great Wall)</option>
-        <option value="seasonic">海韵 (Seasonic)</option>
-        <option value="corsair">海盗船 (Corsair)</option>
-      </select>
-    </div>
-    <div class="control-group">
-      <label>电源冗余</label>
-      <select id="psuHeadroom" onchange="rebuild()" style="font-size:11px;">
-        <option value="15">15% 经济</option>
-        <option value="25">25% 标准</option>
-        <option value="50" selected>50% 充足 (推荐)</option>
-      </select>
-    </div>
-    <div class="control-group">
-      <label>散热品牌</label>
-      <select id="coolerBrand" onchange="rebuild()" style="font-size:11px;">
-        <option value="auto">自动推荐</option>
-        <option value="deepcool">九州风神 (DeepCool)</option>
-        <option value="thermalright">利民 (Thermalright)</option>
-        <option value="noctua">猫头鹰 (Noctua)</option>
-        <option value="corsair">海盗船 (Corsair)</option>
-        <option value="nzxt">恩杰 (NZXT)</option>
-      </select>
-    </div>
-    <div class="control-group">
-      <label>内存品牌</label>
-      <select id="ramBrand" onchange="rebuild()" style="font-size:11px;">
-        <option value="auto">自动推荐</option>
-        <option value="kingston">金士顿 (Kingston)</option>
-        <option value="corsair">海盗船 (Corsair)</option>
-        <option value="gskill">芝奇 (G.Skill)</option>
-        <option value="samsung">三星 (Samsung)</option>
-      </select>
-    </div>
-    <div class="control-group">
-      <label>存储品牌</label>
-      <select id="storageBrand" onchange="rebuild()" style="font-size:11px;">
-        <option value="auto">自动推荐</option>
-        <option value="samsung">三星 (Samsung)</option>
-        <option value="westerndigital">西部数据 (WD)</option>
-        <option value="zhitai">致态 (ZhiTai)</option>
-        <option value="micron">美光 (Micron)</option>
-      </select>
-    </div>
-    <div class="control-group">
-      <label>机箱品牌</label>
-      <select id="caseBrand" onchange="rebuild()" style="font-size:11px;">
-        <option value="auto">自动推荐</option>
-        <option value="coolermaster">酷冷至尊 (Cooler Master)</option>
-        <option value="fractal">分形工艺 (Fractal)</option>
-      </select>
-    </div>
-    <div class="control-group">
-      <label>机箱尺寸</label>
-      <select id="caseSize" onchange="rebuild()" style="font-size:11px;">
-        <option value="auto">自动推荐</option>
-        <option value="m-atx">M-ATX (小型)</option>
-        <option value="atx">ATX (标准)</option>
-        <option value="e-atx">E-ATX (全塔)</option>
-      </select>
-    </div>
-    <div class="control-group">
-      <label>显示器品牌</label>
-      <select id="monitorBrand" onchange="rebuild()" style="font-size:11px;">
-        <option value="auto">自动推荐</option>
-        <option value="dell">戴尔 (Dell)</option>
-        <option value="asus">华硕 (ASUS)</option>
-        <option value="samsung">三星 (Samsung)</option>
-        <option value="lg">LG</option>
-        <option value="aoc">AOC</option>
-        <option value="benq">明基 (BenQ)</option>
-      </select>
-    </div>
-    <div class="control-group">
-      <label>显示器尺寸</label>
-      <select id="monitorSize" onchange="rebuild()" style="font-size:11px;">
-        <option value="auto">自动推荐</option>
-        <option value="24">24寸 (1080P)</option>
-        <option value="27">27寸 (2K/4K)</option>
-        <option value="32">32寸 (4K+)</option>
-      </select>
-    </div>
-    <div class="control-group">
-      <label>键鼠品牌</label>
-      <select id="kbBrand" onchange="rebuild()" style="font-size:11px;">
-        <option value="auto">自动推荐</option>
-        <option value="logitech">罗技 (Logitech)</option>
-        <option value="razer">雷蛇 (Razer)</option>
-        <option value="filco">斐尔可 (FILCO)</option>
-      </select>
-    </div>
-    <div style="flex:1;text-align:right;">
-      <button class="btn" onclick="rebuild()">&#128269; 生成推荐</button>
-    </div>
-  </div>
 
-  <!-- Weight panel -->
-  <div class="result-section" id="weightSection">
-    <div class="section-header">
-      <h2>权重调整</h2>
-      <span class="section-sub">拖动滑块调整各因素的重要性</span>
-    </div>
-    <div class="weight-panel" id="weightPanel"></div>
-  </div>
-
-  <!-- Bottleneck Analysis -->
-  <div class="result-section" id="bnSection">
-    <div class="section-header">
-      <h2>&#9888; 性能瓶颈分析</h2>
-      <span class="section-sub" id="bnOverall">系统会自动检测并避免瓶颈</span>
-    </div>
-    <div class="bottleneck-grid" id="bnGrid"></div>
-  </div>
-
-  <!-- Result: Summary -->
-  <div class="result-section" id="resultSummary">
-    <div class="section-header">
-      <h2>推荐配置总览</h2>
-      <span class="section-sub" id="scenarioLabel">游戏方案</span>
-    </div>
-    <div class="build-summary" id="summaryCards"></div>
-  </div>
-
-  <!-- Result: Component Table -->
-  <div class="result-section">
-    <div class="section-header">
-      <h2>详细配置清单</h2>
-      <span class="section-sub">红绿标价最优/最差</span>
-    </div>
-    <div style="overflow-x:auto;" class="scroll-hint">
-      <table class="component-table" id="buildTable">
-        <thead id="buildHead"></thead>
-        <tbody id="buildBody"></tbody>
-      </table>
-    </div>
-    <div class="budget-bar-wrap">
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:#86868b;margin-bottom:6px;">
-        <span>已花费: <strong id="spentDisplay">&#165;0</strong></span>
-        <span id="remainDisplay">预算: &#165;8,000</span>
+    <!-- Price breakdown -->
+    <div class="result-section">
+      <div class="section-header">
+        <h2>&#128176; 价格汇总</h2>
+        <span class="section-sub" id="step3BudgetInfo">预算使用率</span>
       </div>
-      <div class="budget-bar">
-        <div class="budget-fill" id="budgetFill" style="width:0%;background:#0071e3;"></div>
+      <div style="padding:12px 24px;">
+        <table class="price-breakdown" id="priceBreakdownTable">
+          <thead><tr><th>配件</th><th>型号</th><th style="text-align:right;">价格</th></tr></thead>
+          <tbody id="priceBreakdownBody"></tbody>
+        </table>
+        <div class="budget-bar-wrap" style="padding:12px 0 4px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#86868b;margin-bottom:6px;">
+            <span>已花费: <strong id="spentDisplay">&#165;0</strong></span>
+            <span id="remainDisplay">预算: &#165;8,000</span>
+          </div>
+          <div class="budget-bar">
+            <div class="budget-fill" id="budgetFill" style="width:0%;background:#0071e3;"></div>
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- Bottleneck Analysis -->
+    <div class="result-section" id="bnSection">
+      <div class="section-header">
+        <h2>&#9888; 瓶颈分析</h2>
+        <span class="section-sub" id="bnOverall">系统会自动检测并避免瓶颈</span>
+      </div>
+      <div class="bottleneck-grid" id="bnGrid"></div>
+    </div>
+
+    <!-- Benchmark References -->
+    <div class="result-section" id="benchmarkSection" style="display:none;">
+      <div class="section-header">
+        <h2>&#127918; 游戏帧率参考</h2>
+        <span class="section-sub">数据参考极客湾/游民星空等媒体评测</span>
+      </div>
+      <div id="benchmarkBody"></div>
+    </div>
+    <div class="result-section" id="benchmarkProdSection" style="display:none;">
+      <div class="section-header">
+        <h2>&#128187; 专业软件跑分参考</h2>
+        <span class="section-sub">数据参考极客湾/PugetBench</span>
+      </div>
+      <div id="benchmarkProdBody"></div>
+    </div>
+    <div class="result-section" id="benchmarkAISection" style="display:none;">
+      <div class="section-header">
+        <h2>&#129302; AI/深度学习性能参考</h2>
+        <span class="section-sub">实际性能因模型/精度/框架而异</span>
+      </div>
+      <div id="benchmarkAIBody"></div>
+    </div>
+
+    <div class="step-nav">
+      <button class="btn btn-secondary" onclick="goStep(2)">&#8592; 修改偏好</button>
+      <button class="btn" onclick="goStep(1)">&#128260; 重新选择</button>
+    </div>
   </div>
 
-  <!-- Current Build Performance Summary (compact, scenario-specific) -->
-  <div class="result-section" id="currentPerfSection" style="display:none;">
-    <div class="section-header">
-      <h2 id="currentPerfTitle">&#128200; 当前配置性能评估</h2>
-      <span class="section-sub" id="currentPerfSub">基于当前硬件的预估表现</span>
-    </div>
-    <div id="currentPerfBody"></div>
-  </div>
-
-  <!-- Alternatives -->
-  <div class="result-section">
-    <div class="section-header">
-      <h2>备选方案</h2>
-      <span class="section-sub">同预算区间的其他推荐组合</span>
-    </div>
-    <div class="alt-grid" id="altGrid"></div>
-  </div>
-
-  <!-- Game Benchmark Reference (gaming only) -->
-  <div class="result-section" id="benchmarkSection" style="display:none;">
-    <div class="section-header">
-      <h2>&#127918; 游戏帧率/功耗/画质参考</h2>
-      <span class="section-sub">数据参考极客湾/游民星空等媒体评测，以实际游戏表现为准</span>
-    </div>
-    <div id="benchmarkBody"></div>
-  </div>
-
-  <!-- Productivity Benchmark Reference (productivity/workstation only) -->
-  <div class="result-section" id="benchmarkProdSection" style="display:none;">
-    <div class="section-header">
-      <h2>&#128187; 专业软件跑分/渲染/视频处理参考</h2>
-      <span class="section-sub">数据参考极客湾/PugetBench/官方评测，实际表现因驱动和平台而异</span>
-    </div>
-    <div id="benchmarkProdBody"></div>
-  </div>
-
-  <!-- AI/Deep Learning Benchmark Reference (ai only) -->
-  <div class="result-section" id="benchmarkAISection" style="display:none;">
-    <div class="section-header">
-      <h2>&#129302; AI/深度学习性能参考</h2>
-      <span class="section-sub">数据参考官方评测/社区实测，实际性能因模型/精度/框架而异</span>
-    </div>
-    <div id="benchmarkAIBody"></div>
-  </div>
-
-  <!-- All components data table -->
-  <div class="result-section">
-    <div class="section-header">
-      <h2>全部配件数据一览</h2>
-      <span class="section-sub">每个品类独立滚动容器 | 拖动侧边进度条查看全部数据</span>
-    </div>
-    <div style="overflow-x:auto;"><div id="allCompBody"></div></div>
-  </div>
-
-  <!-- Price History -->
-  <div class="result-section" id="priceSection">
-    <div class="section-header">
-      <h2>&#128200; 京东/天猫参考价格走势</h2>
-      <span class="section-sub">CPU / GPU / 计算卡(NVIDIA/AMD) / Apple Silicon | 鼠标悬浮查看价格</span>
-    </div>
-    <div style="padding:8px 24px 0;">
-      <select id="priceChartSelect" onchange="renderPriceChart()" style="padding:6px 12px;border:1px solid #d2d2d7;border-radius:8px;font-size:13px;max-width:320px;">
-        <optgroup label="CPU"></optgroup>
-        <optgroup label="GPU"></optgroup>
-      </select>
-      <span id="priceBadge" style="margin-left:10px;font-size:12px;color:#86868b;"></span>
-    </div>
-    <div style="padding:12px 24px 20px;">
-      <canvas id="priceChartCanvas" style="width:100%;height:280px;" role="img" aria-label="Price history chart">Price chart requires JavaScript</canvas>
-    </div>
-    <div style="padding:0 24px 16px;display:flex;flex-wrap:wrap;gap:16px;font-size:11px;color:#86868b;border-top:1px solid #e8e8ed;padding-top:12px;">
-      <span>&#9679; <span style="color:#0071e3;">京东官方旗舰店参考价</span></span>
-      <span>&#9679; <span style="color:#ff9500;">淘宝天猫参考价</span></span>
-      <span>&#9679; <span style="color:#34c759;">首发价</span> <span style="color:#86868b;">|</span> <span style="color:#c0392b;">当前价</span></span>
-      <span style="margin-left:auto;">数据来源: 电商平台公开信息 | 更新于 2026-06</span>
-    </div>
-  </div>
 </div>
 
 <script>
@@ -735,7 +702,7 @@ var state = {
   scenario: 'gaming',
   budget: 8000,
   budgetFlex: 0,
-  buildMode: 'full',
+  buildMode: 'components', // v5.3: 仅主机模式（无外设）
   brandPref: 'all',
   memPref: 'auto',
   mbBrand: 'auto',
@@ -1483,26 +1450,72 @@ function findAlternativesWithFix(build, scenario, budget, brandPref, memPref, we
 
 // ==================== UI RENDERING ====================
 
+// ==================== STEP WIZARD ====================
+
+var currentStep = 1;
+
+function goStep(n) {
+  if (n === 3) {
+    // Generate configuration before showing step 3
+    state.brandPref = document.getElementById('brandPref').value;
+    state.memPref = document.getElementById('memPref').value;
+    state.mbBrand = document.getElementById('mbBrand').value;
+    rebuild();
+  }
+  currentStep = n;
+  document.querySelectorAll('.step-content').forEach(function(el) {
+    el.classList.toggle('active', el.id === 'step' + n);
+  });
+  document.querySelectorAll('.step-item').forEach(function(el) {
+    var stepNum = parseInt(el.dataset.step);
+    el.classList.toggle('active', stepNum === n);
+    el.classList.toggle('done', stepNum < n);
+  });
+  if (n === 1) window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function selectScenarioStep(s) {
+  state.scenario = s;
+  document.querySelectorAll('.scenario-card').forEach(function(el) {
+    el.classList.toggle('active', el.dataset.scenario === s);
+  });
+  // Apple model selector toggle
+  var appleSel = document.getElementById('appleModelSelector');
+  var appleBuild = document.getElementById('appleBuildControls');
+  var mainCtrl = document.getElementById('mainControls');
+  var aiGroup = document.getElementById('aiModelGroup');
+  if (s === 'apple') {
+    appleSel.style.display = '';
+    appleBuild.style.display = '';
+    mainCtrl.style.display = 'none';
+    document.getElementById('step2').querySelector('.step-nav').querySelectorAll('button')[1].textContent = '查看配置 \u2192';
+  } else {
+    appleSel.style.display = 'none';
+    appleBuild.style.display = 'none';
+    mainCtrl.style.display = '';
+    document.getElementById('step2').querySelector('.step-nav').querySelectorAll('button')[1].textContent = '\u751f\u6210\u914d\u7f6e \u2192';
+  }
+  if (aiGroup) aiGroup.style.display = (s === 'ai') ? '' : 'none';
+  goStep(2);
+}
+
 function selectScenario(s) {
   state.scenario = s;
   document.querySelectorAll('.scenario-card').forEach(function(el) {
     el.classList.toggle('active', el.dataset.scenario === s);
   });
-  // Show Apple model selector or standard controls
   var appleSel = document.getElementById('appleModelSelector');
   var mainCtrl = document.getElementById('mainControls');
   var aiGroup = document.getElementById('aiModelGroup');
   if (s === 'apple') {
-    if (state._pcBuildMode) state.buildMode = state._pcBuildMode;
     state.buildMode = state.appleBuildMode || 'full';
     appleSel.style.display = '';
     mainCtrl.style.display = 'none';
   } else {
-    if (state._pcBuildMode) state.buildMode = state._pcBuildMode;
+    state.buildMode = 'components';
     appleSel.style.display = 'none';
     mainCtrl.style.display = '';
   }
-  // Show AI model selector only for AI scenario
   if (aiGroup) aiGroup.style.display = (s === 'ai') ? '' : 'none';
   rebuild();
 }
@@ -1577,9 +1590,12 @@ function setBudget(v) {
 
 function setBuildMode(mode) {
   state.buildMode = mode;
-  document.querySelectorAll('#buildModeToggle .mode-btn').forEach(function(el) {
-    el.classList.toggle('active', el.dataset.mode === mode);
-  });
+  var toggle = document.getElementById('buildModeToggle');
+  if (toggle) {
+    toggle.querySelectorAll('.mode-btn').forEach(function(el) {
+      el.classList.toggle('active', el.dataset.mode === mode);
+    });
+  }
   rebuild();
 }
 
@@ -1628,11 +1644,7 @@ function rebuild() {
   state.storageBrand = document.getElementById('storageBrand').value;
   state.caseBrand = document.getElementById('caseBrand').value;
   state.caseSize = document.getElementById('caseSize').value;
-  state.monitorBrand = document.getElementById('monitorBrand').value;
-  state.monitorSize = document.getElementById('monitorSize').value;
-  state.kbBrand = document.getElementById('kbBrand').value;
   state.aiModelSize = document.getElementById('aiModelSize').value;
-  state.psuHeadroom = parseInt(document.getElementById('psuHeadroom').value);
   var sc = state.scenario;
   var effectiveBudget = getEffectiveBudget();
   var build = buildRecommendation(sc, effectiveBudget, state.brandPref, state.memPref, state.weights);
@@ -1643,26 +1655,132 @@ function rebuild() {
     currentBottleneck = { overall: 'good', cpu: null, gpu: null, ram: null, storage: null };
   }
   currentAlternatives = findAlternativesWithFix(build, sc, effectiveBudget, state.brandPref, state.memPref, state.weights);
-  renderWeights();
+  // Render Apple model selector (always needed for apple scenario)
   renderAppleCompare();
-  renderBottleneck(currentBottleneck);
-  renderSummary(build);
+  // Render step 3 content
+  renderStep3(build);
+}
+
+// ==================== STEP 3 RENDERING ====================
+
+function renderStep3(build) {
+  var sc = state.scenario;
+  var cfg = scenarioConfig[sc];
+  if (!cfg) return;
+  var s = build.summary || {};
+  var budget = state.budget;
+
+  // --- Labels ---
+  document.getElementById('step3ScenarioLabel').textContent = cfg.label;
+  document.getElementById('step3BudgetLabel').textContent = '\u00a5' + budget.toLocaleString();
+
+  // --- Performance Metrics Grid ---
+  var perfGrid = document.getElementById('step3PerfGrid');
+  var perfGrade = (s.performanceScore || 0) >= 80 ? 'green' : (s.performanceScore >= 60 ? 'blue' : (s.performanceScore >= 40 ? 'orange' : 'red'));
+  var ramExtra = s.ramECC ? ' ECC' : '';
+  var ramLabel = (s.ramGen || '').toUpperCase() + ' ' + (s.ramFreq || 0) + 'MHz' + ramExtra;
+
+  // Compute per-scenario metrics
+  var cpuModel = (s.cpuModel || '').split(' ').slice(0,2).join(' ');
+  var gpuModel = (s.gpuModel || '').split(' ').slice(0,2).join(' ');
+  var storageDisplay = (s.storageCapacity || 0) >= 1024 ? ((s.storageCapacity/1024).toFixed(0) + 'TB') : (s.storageCapacity || 0) + 'GB';
+
+  if (sc === 'apple') {
+    // Apple: show unified memory and AI score prominently
+    var perfMetrics = [
+      { label: '综合AI评分', value: (s.performanceScore || 0) + '/100', cls: perfGrade },
+      { label: '统一内存', value: (s.ramCapacity || 0) + 'GB', cls: 'blue' },
+      { label: '总价', value: '\u00a5' + (s.totalPrice || 0).toLocaleString(), cls: 'blue' },
+      { label: '神经网络引擎', value: (build.parts.cpu && build.parts.cpu.cores) + '\u6838', cls: 'green' }
+    ];
+    var perfHtml = '';
+    perfMetrics.forEach(function(m) {
+      perfHtml += '<div class="perf-card"><div class="p-label">' + m.label + '</div><div class="p-value ' + m.cls + '">' + m.value + '</div></div>';
+    });
+    perfGrid.innerHTML = perfHtml;
+    document.getElementById('step3PerfNote').textContent = 'Mac Studio \u7edf\u4e00\u5185\u5b58\u67b6\u6784 | AI\u521b\u4f5c\u4e0e\u591a\u5a92\u4f53\u7f16\u8f91\u4f73\u9009';
+  } else {
+    var perfMetrics = [
+      { label: '\u7efc\u5408\u6027\u80fd', value: (s.performanceScore || 0) + '/100', cls: perfGrade },
+      { label: 'CPU', value: cpuModel, cls: 'blue', unit: (s.cpuCores || 0) + '\u6838' },
+      { label: '\u663e\u5361', value: gpuModel, cls: 'blue', unit: (s.gpuVRAM || 0) + 'GB' },
+      { label: '\u5185\u5b58', value: (s.ramCapacity || 0) + 'GB', cls: '', unit: ramLabel },
+      { label: '\u5b58\u50a8', value: storageDisplay, cls: '' },
+      { label: '\u6027\u4ef7\u6bd4', value: (s.pricePerformance || 0) + '', cls: 'green', unit: '\u5206/\u5343\u5143' },
+      { label: '\u8017\u7535', value: (s.totalTDP || 0) + 'W', cls: 'orange' }
+    ];
+    var perfHtml = '';
+    perfMetrics.forEach(function(m) {
+      perfHtml += '<div class="perf-card"><div class="p-label">' + m.label + '</div><div class="p-value ' + m.cls + '">' + m.value + '</div>';
+      if (m.unit) perfHtml += '<div style="font-size:10px;color:#86868b;">' + m.unit + '</div>';
+      perfHtml += '</div>';
+    });
+    perfGrid.innerHTML = perfHtml;
+    document.getElementById('step3PerfNote').textContent = cfg.note;
+  }
+
+  // --- Component Table (no peripherals) ---
   renderBuildTable(build);
-  renderCurrentPerf(build);
+
+  // --- Price Breakdown ---
+  var parts = build.parts;
+  var pbItems = [];
+  if (sc === 'apple' && build.isApple) {
+    var apple = build.appleSelected || {};
+    pbItems.push({ cat: 'Mac Studio', model: apple.name || 'Mac Studio', price: apple.price || 0 });
+  } else {
+    var cats = [
+      { cat: 'CPU', part: parts.cpu },
+      { cat: 'GPU', part: parts.gpu },
+      { cat: '\u4e3b\u677f', part: parts.mb },
+      { cat: '\u5185\u5b58', part: parts.ram },
+      { cat: '\u5b58\u50a8', part: parts.storage },
+      { cat: '\u6563\u70ed', part: parts.cooler },
+      { cat: '\u7535\u6e90', part: parts.psu },
+      { cat: '\u673a\u7bb1', part: parts.case }
+    ];
+    cats.forEach(function(c) {
+      if (c.part && c.part.price !== undefined) {
+        pbItems.push({ cat: c.cat, model: c.part.name, price: c.part.price });
+      }
+    });
+  }
+  var totalPrice = build.totalPrice || 0;
+  var pbHtml = '';
+  pbItems.forEach(function(item) {
+    pbHtml += '<tr><td>' + item.cat + '</td><td style="font-size:12px;color:#555;">' + item.model + '</td><td style="text-align:right;font-weight:600;">\u00a5' + item.price.toLocaleString() + '</td></tr>';
+  });
+  pbHtml += '<tr class="total-row"><td style="font-weight:600;">\u5408\u8ba1</td><td></td><td style="text-align:right;font-weight:700;color:#0071e3;font-size:16px;">\u00a5' + totalPrice.toLocaleString() + '</td></tr>';
+  document.getElementById('priceBreakdownBody').innerHTML = pbHtml;
+
+  // --- Budget Bar ---
+  document.getElementById('spentDisplay').textContent = '\u00a5' + totalPrice.toLocaleString();
+  document.getElementById('remainDisplay').textContent = '\u9884\u7b97: \u00a5' + budget.toLocaleString();
+  var pct = Math.min(100, Math.round(totalPrice / budget * 100));
+  document.getElementById('budgetFill').style.width = pct + '%';
+  document.getElementById('budgetFill').style.background = pct > 100 ? '#ff3b30' : '#0071e3';
+  document.getElementById('step3BudgetInfo').textContent = '\u9884\u7b97\u4f7f\u7528\u7387: ' + pct + '% | ' + (pct > 100 ? '\u8d85\u51fa\u9884\u7b97 \u00a5' + (totalPrice - budget).toLocaleString() : '\u5269\u4f59 \u00a5' + (budget - totalPrice).toLocaleString());
+
+  // --- Bottleneck ---
+  if (sc !== 'apple') {
+    renderBottleneck(currentBottleneck);
+    document.getElementById('bnSection').style.display = '';
+  } else {
+    document.getElementById('bnSection').style.display = 'none';
+  }
+
+  // --- Benchmark References ---
   renderBenchmark(build);
   renderBenchmarkProd(build);
   renderBenchmarkAI(build);
-  renderAllComponents();
-  renderAlternatives(currentAlternatives);
-  populatePriceSelector();
-  // Clear upgrade history UI
-  var banner = document.getElementById('upgradeBanner');
-  if (banner) banner.innerHTML = '';
-  document.getElementById('budgetBarLabel') && (document.getElementById('budgetBarLabel').innerHTML = '');
+
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function renderWeights() {
   var ws = document.getElementById('weightSection');
+  if (!ws) return; // weight section removed in v5.3 step wizard
   if (state.scenario === 'apple') { ws.style.display = 'none'; return; }
   ws.style.display = '';
   var keys = ['performance', 'priceRatio', 'powerEfficiency', 'upgrade'];
@@ -2063,8 +2181,10 @@ function setAppleModel(modelId) {
 function renderSummary(build) {
   var s = build.summary;
   var cfg = scenarioConfig[state.scenario];
-  document.getElementById('scenarioLabel').textContent = cfg.label + ' | ' + cfg.note;
-  document.getElementById('spentDisplay').textContent = '\u00a5' + s.totalPrice.toLocaleString();
+  var sl = document.getElementById('scenarioLabel');
+  if (sl) sl.textContent = cfg.label + ' | ' + cfg.note;
+  var sd = document.getElementById('spentDisplay');
+  if (sd) sd.textContent = '\u00a5' + s.totalPrice.toLocaleString();
   document.getElementById('remainDisplay').textContent = '\u9884\u7b97: \u00a5' + state.budget.toLocaleString();
   // Show upgrade diff if any
   var budgetBarLabel = document.getElementById('budgetBarLabel');
@@ -3765,6 +3885,7 @@ function renderBenchmarkAI(build) {
 // ---- Current Build Performance Summary (compact, shown below build table) ----
 function renderCurrentPerf(build) {
   var section = document.getElementById('currentPerfSection');
+  if (!section) return; // removed in v5.3 step wizard
   var body = document.getElementById('currentPerfBody');
   var title = document.getElementById('currentPerfTitle');
   var sub = document.getElementById('currentPerfSub');
@@ -4010,6 +4131,7 @@ function getParams(part) {
 // ---- All Components ----
 function renderAllComponents() {
   var wrap = document.getElementById('allCompBody');
+  if (!wrap) return; // removed in v5.3 step wizard
   var innerHtml = '';
   
   function headerWithFilter(title, catKey, count) {
@@ -4661,7 +4783,8 @@ var priceDb = {};
 // Build price history database
 priceDb = buildPriceDb();
 rebuild();
-populatePriceSelector();
+// Price chart selector is loaded on-demand in v5.3 (step wizard)
+try { populatePriceSelector(); } catch(e) {}
 </script>
 </body>
 </html>
