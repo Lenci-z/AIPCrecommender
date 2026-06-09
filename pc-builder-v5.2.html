@@ -2503,7 +2503,18 @@ function buildTableRow(item, bestPrice, worstPrice) {
   var priceStyle = 'font-weight:600;text-align:right;white-space:nowrap;';
   if (item.part.price === bestPrice) priceStyle += ' color:#3b6d11;';
   else if (item.part.price === worstPrice) priceStyle += ' color:#c0392b;';
-  r += '<td style="' + priceStyle + '">\u00a5' + item.part.price.toLocaleString() + '</td>';
+  var priceHtml = '<div style="' + priceStyle + '">¥' + item.part.price.toLocaleString() + '</div>';
+  // Launch price comparison
+  if (item.part.launchPrice && item.part.launchPrice > item.part.price) {
+    var discount = Math.round((1 - item.part.price / item.part.launchPrice) * 100);
+    priceHtml += '<div style="font-size:11px;color:#999;text-decoration:line-through;">首发 ¥' + item.part.launchPrice.toLocaleString() + '</div>';
+    priceHtml += '<div style="font-size:11px;color:#3b6d11;">-' + discount + '%</div>';
+  } else if (item.part.launchPrice && item.part.launchPrice < item.part.price) {
+    var increase = Math.round((item.part.price / item.part.launchPrice - 1) * 100);
+    priceHtml += '<div style="font-size:11px;color:#999;">首发 ¥' + item.part.launchPrice.toLocaleString() + '</div>';
+    priceHtml += '<div style="font-size:11px;color:#c0392b;">+' + increase + '%</div>';
+  }
+  r += '<td>' + priceHtml + '</td>';
   r += '</tr>';
   return r;
 }
