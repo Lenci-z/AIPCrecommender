@@ -583,6 +583,10 @@ var DB = {
     { id:'D5-64-8000', name:'DDR5 64GB 8000MHz XMP', brand:'kingston', capacity:64, gen:'ddr5', freq:8000, ecc:false, price:4999, note:'大容量旗舰', official:false, launchPrice:5999, launchDate:'2025-09' },
     { id:'D5-32-8400', name:'DDR5 32GB 8400MHz XMP', brand:'corsair', capacity:32, gen:'ddr5', freq:8400, ecc:false, price:3499, note:'超频旗舰', official:false, launchPrice:3999, launchDate:'2026-01' },
     { id:'D5-128-5600', name:'DDR5 128GB 5600MHz', brand:'kingston', capacity:128, gen:'ddr5', freq:5600, ecc:false, price:2599, note:'工作站', official:true, launchPrice:3299, launchDate:'2025-03' },
+    // ======= High-capacity DDR5 (multi-stick systems) =======
+    { id:'D5-24-6000', name:'DDR5 24GB 6000MHz EXPO', brand:'gskill', capacity:24, gen:'ddr5', freq:6000, ecc:false, price:499, note:'24GB单条', official:true, launchPrice:599, launchDate:'2024-06' },
+    { id:'D5-48-6000', name:'DDR5 48GB 6000MHz EXPO', brand:'gskill', capacity:48, gen:'ddr5', freq:6000, ecc:false, price:999, note:'48GB单条', official:true, launchPrice:1199, launchDate:'2024-06' },
+    { id:'D5-96-5600', name:'DDR5 96GB 5600MHz', brand:'kingston', capacity:96, gen:'ddr5', freq:5600, ecc:false, price:1899, note:'超大容量', official:true, launchPrice:2399, launchDate:'2025-06' },
     // ======= ECC Memory =======
     { id:'D5-16-4800-ECC', name:'DDR5 ECC 16GB 4800MHz', brand:'samsung', capacity:16, gen:'ddr5', freq:4800, ecc:true, price:499, note:'工作站ECC入门', official:true, launchPrice:599, launchDate:'2024-06' },
     { id:'D5-32-4800-ECC', name:'DDR5 ECC 32GB 4800MHz', brand:'samsung', capacity:32, gen:'ddr5', freq:4800, ecc:true, price:899, note:'工作站ECC', official:true, launchPrice:1099, launchDate:'2024-06' },
@@ -935,24 +939,44 @@ function analyzeBottleneck(build, scenario, budget) {
     var ramSev = Math.round((1 - effectiveRAM / idealRAM) * 100);
     var ramNote = 'RAM容量不足';
     if (scenario === 'workstation' || scenario === 'productivity') ramNote += '，工作站建议ECC';
-    // Find RAM upgrade with price
+    // Find RAM upgrade with price (supports multi-stick configurations)
     var upgRam = null;
+    var ramFix = '升级至 ' + idealRAM + 'GB';
+    var currentSticks = ram.sticks || 1;
+    // Strategy 1: Find a single stick >= idealRAM
     var ramOpts = DB.ram.filter(function(r) { return r.capacity >= idealRAM && r.gen === ram.gen && (scenarioConfig[scenario].needECC ? r.ecc : true); });
     ramOpts.sort(function(a,b) { return a.price - b.price; });
-    if (ramOpts.length > 0) upgRam = ramOpts[0];
-    var ramFix = upgRam ? '升级至 ' + upgRam.name + ' (+' + (upgRam.price - ram.price > 0 ? '\u00a5' + (upgRam.price - ram.price) : '\u00a5' + upgRam.price) + ')' : '升级至 ' + idealRAM + 'GB';
+    if (ramOpts.length > 0) {
+      upgRam = ramOpts[0];
+      var costDiff = upgRam.price - (ram.price * currentSticks);
+      ramFix = '升级至 ' + upgRam.name + ' (1\u6761) (+' + (costDiff > 0 ? '\u00a5' + costDiff : '\u00a5' + upgRam.price) + ')';
+    } else {
+      // Strategy 2: Find 2+ sticks that together reach idealRAM
+      var pairOpts = DB.ram.filter(function(r) { return r.capacity * 2 >= idealRAM && r.gen === ram.gen && (scenarioConfig[scenario].needECC ? r.ecc : true); });
+      pairOpts.sort(function(a,b) { return a.price - b.price; });
+      if (pairOpts.length > 0) {
+        var pair = pairOpts[0];
+        var pairSticks = Math.ceil(idealRAM / pair.capacity);
+        var pairCost = pair.price * pairSticks;
+        var costDiff2 = pairCost - (ram.price * currentSticks);
+        ramFix = '升级至 ' + pairSticks + 'x ' + pair.name + ' (+' + (costDiff2 > 0 ? '\u00a5' + costDiff2 : '\u00a5' + pairCost) + ')';
+      }
+    }
     bn.ram = { level: ramSev > 50 ? 'critical' : 'warn', severity: ramSev,
       detail: effectiveRAM + 'GB < 建议' + idealRAM + 'GB (' + ramNote + ')',
       fix: ramFix };
     scores.push(ramSev);
   } else if (scenarioConfig[scenario].needECC && !ram.ecc) {
     // Find concrete ECC RAM upgrade options
-    var eccOpts = DB.ram.filter(function(r) { return r.ecc && r.gen === ram.gen && r.capacity >= ram.capacity; });
+    var eccOpts = DB.ram.filter(function(r) { return r.ecc && r.gen === ram.gen && r.capacity >= (ram.totalCapacity || ram.capacity); });
     eccOpts.sort(function(a,b) { return a.price - b.price; });
     var eccFix = '无可替换的ECC内存(需' + ram.gen.toUpperCase() + ' + 支持ECC主板)';
     if (eccOpts.length > 0) {
       var bestECC = eccOpts[0];
-      eccFix = '替换为 ' + bestECC.name + ' (+' + (bestECC.price - ram.price > 0 ? '\u00a5' + (bestECC.price - ram.price) : '\u00a5' + bestECC.price) + ')' + (eccOpts.length > 1 ? '，另有' + eccOpts.slice(1).map(function(e) { return e.name; }).join('、') : '');
+      var eccSticks = Math.ceil((ram.totalCapacity || ram.capacity) / bestECC.capacity);
+      var eccTotalPrice = bestECC.price * eccSticks;
+      var eccOldTotal = (ram.price * (ram.sticks || 1));
+      eccFix = '替换为 ' + eccSticks + 'x ' + bestECC.name + ' (+' + (eccTotalPrice - eccOldTotal > 0 ? '\u00a5' + (eccTotalPrice - eccOldTotal) : '\u00a5' + eccTotalPrice) + ')' + (eccOpts.length > 1 ? '，另有' + eccOpts.slice(1).map(function(e) { return e.name; }).join('、') : '');
     }
     bn.ram = { level: 'warn', severity: 20, detail: (ram.totalCapacity || ram.capacity) + 'GB 非ECC内存，工作站建议ECC以保障数据完整性',
       fix: eccFix };
