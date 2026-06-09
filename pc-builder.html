@@ -673,6 +673,11 @@ function analyzeBottleneck(build, scenario, budget) {
     bn.ram = { level: 'warn', severity: 20, detail: ram.capacity + 'GB 非ECC内存，工作站建议ECC以保障数据完整性',
       fix: '建议更换为ECC内存 + 支持ECC的主板' };
     scores.push(20);
+  } else if (ram.ecc && build.parts.mb && !build.parts.mb.ecc) {
+    // ECC 内存已选但主板不支持 ECC — 数据联动排查
+    bn.ram = { level: 'warn', severity: 25, detail: 'ECC内存(' + ram.name + ') 搭配不支持ECC的主板(' + build.parts.mb.name + ')，ECC功能无法启用',
+      fix: '更换为支持ECC的主板（如 X870E / B850 / W680 系列）或换回非ECC内存' };
+    scores.push(25);
   } else if (ram.freq < (scenarioConfig[scenario].ramPreferFreq || 3200)) {
     bn.ram = { level: 'warn', severity: 15, detail: 'RAM频率(' + ram.freq + 'MHz) 略低于最佳(' + scenarioConfig[scenario].ramPreferFreq + 'MHz)',
       fix: '可选更高频率内存提升性能' };
@@ -701,6 +706,22 @@ function analyzeBottleneck(build, scenario, budget) {
   if (maxScore >= 50) bn.overall = 'critical';
   else if (maxScore >= 20) bn.overall = 'warn';
   else bn.overall = 'good';
+
+  // ---- Brand Compatibility Check ----
+  bn.brandWarning = null;
+  if (build.parts.mb && build.parts.mb.name && build.parts.mb.name.indexOf('无匹配') >= 0) {
+    var brandExplain = '';
+    if (state.mbBrand !== 'auto' && state.brandPref !== 'all') {
+      brandExplain = '品牌偏好「' + state.brandPref + '」与主板品牌「' + state.mbBrand + '」可能冲突：所选CPU插座与主板品牌无交集';
+    } else if (state.mbBrand === 'asrock' && build.parts.cpu && build.parts.cpu.socket === 'LGA1851') {
+      brandExplain = '华擎(ASRock)主要产品线为AMD AM5平台，Intel LGA1851主板极少，建议切换主板品牌为华硕/微星';
+    }
+    if (brandExplain) {
+      bn.brandWarning = { level: 'warn', severity: 30, detail: '主板与CPU/品牌未匹配: ' + build.parts.mb.name, fix: brandExplain };
+      scores.push(30);
+      bn.overall = Math.max(bn.overall === 'critical' ? 3 : (bn.overall === 'warn' ? 2 : 1), 2) === 3 ? 'critical' : 'warn';
+    }
+  }
 
   return bn;
 }
@@ -1084,14 +1105,15 @@ function syncBudget(source) {
   });
   // Update tier label
   var tier = '';
-  if (v <= 3000) tier = '入门级';
-  else if (v <= 5000) tier = '经济型';
-  else if (v <= 8000) tier = '主流型';
-  else if (v <= 10000) tier = '中高端';
-  else if (v <= 15000) tier = '高性能';
-  else if (v <= 20000) tier = '旗舰级';
-  else if (v <= 30000) tier = '发烧级';
-  else tier = '顶级定制';
+  if (v <= 3000) tier = '入门¥3K';
+  else if (v <= 5000) tier = '经济¥5K';
+  else if (v <= 8000) tier = '主流¥8K';
+  else if (v <= 10000) tier = '中高¥10K';
+  else if (v <= 15000) tier = '高性能¥15K';
+  else if (v <= 20000) tier = '旗舰¥20K';
+  else if (v <= 30000) tier = '发烧¥30K';
+  else if (v <= 40000) tier = '顶级¥40K';
+  else tier = '至尊¥' + (v/1000).toFixed(0) + 'K';
   document.getElementById('budgetTier').textContent = tier;
   // Show custom badge when budget exceeds presets
   var presetBadge = document.getElementById('budgetRangeHint');
@@ -1169,6 +1191,10 @@ function renderBottleneck(bn) {
     { key: 'ram', label: '内存 瓶颈' },
     { key: 'storage', label: '存储 瓶颈' }
   ];
+  // Add brand compatibility card if warning exists
+  if (bn.brandWarning) {
+    items.push({ key: 'brandWarning', label: '品牌兼容性' });
+  }
 
   var html = '';
   items.forEach(function(item) {
@@ -1579,18 +1605,20 @@ function generatePriceHistory(item) {
     }
     steps = months.length;
   }
-  // Simulate JD prices (slightly above current, trending down)
+  // Simulate JD prices (slightly above current, trending down) — 确定性模拟，无随机噪音
   var jdPrices = [];
   var tbPrices = [];
   var jdStart = launch * (1 + 0.03);
   var tbStart = launch * (1 + 0.01);
   var jdCurrent = current * (1 + 0.02);
   var tbCurrent = current;
+  var seed = (item.launchPrice || launch) * 100 + (current || 1); // deterministic seed from prices
   for (var i = 0; i < steps; i++) {
     var t = i / (steps - 1 || 1);
-    // Smooth curve with some noise
-    var noiseJD = (Math.random() - 0.5) * current * 0.02;
-    var noiseTB = (Math.random() - 0.5) * current * 0.025;
+    // Deterministic "noise" using pseudo-hash from seed and index — chart stable across page loads
+    var noiseFactor = ((seed * 9301 + 49297 * (i + 1)) % 233280) / 233280;
+    var noiseJD = (noiseFactor - 0.5) * current * 0.02;
+    var noiseTB = (noiseFactor - 0.5) * current * 0.025;
     var jd = jdStart + (jdCurrent - jdStart) * Math.pow(t, 0.7) + noiseJD;
     var tb = tbStart + (tbCurrent - tbStart) * Math.pow(t, 0.8) + noiseTB;
     jdPrices.push({ price: Math.round(jd) });
