@@ -1,0 +1,1905 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 智能组机推荐 - PC Builder</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; background: #f5f5f7; color: #1d1d1f; font-size: 14px; }
+.container { max-width: 1280px; margin: 0 auto; padding: 20px; }
+.header { background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); color: #fff; padding: 32px 40px; border-radius: 16px; margin-bottom: 24px; }
+.header h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+.header p { font-size: 14px; opacity: 0.8; }
+.controls { background: #fff; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+.control-group { display: flex; flex-direction: column; gap: 4px; }
+.control-group label { font-size: 12px; font-weight: 500; color: #86868b; }
+.control-group select, .control-group input { padding: 8px 12px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; background: #fff; outline: none; min-width: 140px; }
+.control-group select:focus, .control-group input:focus { border-color: #0071e3; box-shadow: 0 0 0 2px rgba(0,113,227,0.2); }
+.control-group input[type="range"] { padding: 0; min-width: 180px; accent-color: #0071e3; }
+.budget-display { font-size: 18px; font-weight: 600; color: #0071e3; min-width: 80px; }
+.btn { padding: 10px 24px; background: #0071e3; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+.btn:hover { background: #0066cc; }
+.btn-secondary { background: #e8e8ed; color: #1d1d1f; }
+.btn-secondary:hover { background: #d2d2d7; }
+.scenario-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+.scenario-card { background: #fff; border: 2px solid transparent; border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.06); text-align: center; }
+.scenario-card:hover { border-color: #0071e3; transform: translateY(-2px); }
+.scenario-card.active { border-color: #0071e3; background: #f0f7ff; }
+.scenario-card .icon { font-size: 32px; margin-bottom: 8px; }
+.scenario-card .name { font-size: 14px; font-weight: 600; }
+.scenario-card .desc { font-size: 11px; color: #86868b; margin-top: 4px; }
+.result-section { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 20px; }
+.section-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid #e8e8ed; }
+.section-header h2 { font-size: 16px; font-weight: 600; }
+.section-sub { font-size: 12px; color: #86868b; }
+.build-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; padding: 20px 24px; }
+.metric-card { background: #f5f5f7; border-radius: 10px; padding: 14px 16px; text-align: center; }
+.metric-card .label { font-size: 11px; color: #86868b; margin-bottom: 4px; }
+.metric-card .value { font-size: 20px; font-weight: 700; }
+.metric-card .value.green { color: #34c759; }
+.metric-card .value.blue { color: #0071e3; }
+.metric-card .value.orange { color: #ff9500; }
+.metric-card .value.red { color: #ff3b30; }
+.component-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.component-table th { padding: 12px 16px; text-align: left; font-weight: 500; font-size: 11px; color: #86868b; border-bottom: 1px solid #e8e8ed; background: #fafafa; white-space: nowrap; }
+.component-table td { padding: 10px 16px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+.component-table tr:hover { background: #f8f8fa; }
+.component-table .cat-cell { font-weight: 600; font-size: 12px; white-space: nowrap; }
+.component-table .price-cell { font-weight: 600; text-align: right; white-space: nowrap; }
+
+/* Bottleneck */
+.bottleneck-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; padding: 16px 24px; }
+.bn-card { border-radius: 10px; padding: 14px 18px; border-left: 4px solid; }
+.bn-card.good { background: #f0faf0; border-color: #34c759; }
+.bn-card.warn { background: #fff8e1; border-color: #ff9500; }
+.bn-card.critical { background: #fef0ef; border-color: #ff3b30; }
+.bn-card .bn-title { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+.bn-card .bn-value { font-size: 22px; font-weight: 700; }
+.bn-card .bn-value.good { color: #34c759; }
+.bn-card .bn-value.warn { color: #ff9500; }
+.bn-card .bn-value.critical { color: #ff3b30; }
+.bn-card .bn-detail { font-size: 11px; color: #86868b; margin-top: 4px; }
+.bn-card .bn-fix { font-size: 11px; color: #555; margin-top: 6px; padding: 6px 10px; background: rgba(0,0,0,0.04); border-radius: 6px; }
+
+/* Budget bar */
+.budget-bar-wrap { padding: 16px 24px; border-top: 1px solid #e8e8ed; }
+.budget-bar { height: 8px; background: #e8e8ed; border-radius: 4px; overflow: hidden; }
+.budget-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+.weight-panel { padding: 16px 24px; border-top: 1px solid #e8e8ed; }
+.weight-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.weight-row label { font-size: 12px; min-width: 70px; color: #555; }
+.weight-row input[type="range"] { flex: 1; accent-color: #0071e3; }
+.weight-row .wval { font-size: 12px; font-weight: 600; min-width: 30px; color: #0071e3; }
+.alt-grid { padding: 16px 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.alt-card { background: #f5f5f7; border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s; }
+.alt-card:hover { background: #e8e8ed; }
+.alt-card .alt-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+.alt-card .alt-price { font-size: 15px; font-weight: 700; color: #0071e3; }
+.alt-card .alt-diff { font-size: 11px; color: #86868b; }
+
+/* ECC badge */
+.ecc-badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; background: #e8f5e9; color: #2e7d32; margin-left: 4px; }
+.mem-type { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; margin-left: 4px; }
+.mem-type.ddr5 { background: #e3f2fd; color: #1565c0; }
+.mem-type.ddr4 { background: #f3e5f5; color: #7b1fa2; }
+
+@media (max-width: 768px) {
+  .scenario-grid { grid-template-columns: repeat(2, 1fr); }
+  .controls { flex-direction: column; align-items: stretch; }
+  .control-group select, .control-group input { min-width: auto; width: 100%; }
+  .build-summary { grid-template-columns: repeat(2, 1fr); }
+  .bottleneck-grid { grid-template-columns: 1fr; }
+}
+/* Warranty mode toggle */
+.mode-toggle { display: flex; border-radius: 8px; overflow: hidden; border: 1px solid #d2d2d7; }
+.mode-btn { padding: 7px 16px; font-size: 12px; font-weight: 500; cursor: pointer; border: none; background: #fff; color: #555; transition: all 0.2s; }
+.mode-btn:not(:last-child) { border-right: 1px solid #d2d2d7; }
+.mode-btn.active { background: #0071e3; color: #fff; }
+.budget-preset.active { border-color: #0071e3 !important; background: #e8f0fe !important; color: #0071e3 !important; font-weight: 500 !important; }
+/* Upgrade option card hover */
+.bn-card [onclick]:hover { box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+.mode-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:600; margin-left:4px; }
+.mode-badge.official { background:#e8f5e9; color:#2e7d32; }
+.mode-badge.grey { background:#fff3e0; color:#e65100; }
+/* Data source badge */
+.data-badge { display:inline-block; padding:1px 6px; border-radius:3px; font-size:10px; font-weight:500; margin-right:3px; }
+.data-badge.gkw { background:#e3f2fd; color:#1565c0; }
+.data-badge.jd { background:#e8f5e9; color:#2e7d32; }
+.data-badge.off { background:#f3e5f5; color:#7b1fa2; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>AI 智能组机推荐</h1>
+    <p>根据使用场景、预算和个性化权重自动匹配最优配置，实时分析性能瓶颈
+    <span style="opacity:0.6;margin-left:12px;font-size:12px;">
+      数据源: <span class="data-badge off">官方规格</span>
+      <span class="data-badge gkw">极客湾</span>
+      <span class="data-badge jd">京东自营</span>
+      <span class="data-badge off">天猫旗舰</span>
+    </span></p>
+  </div>
+
+  <!-- Scenario -->
+  <div class="scenario-grid" id="scenarioGrid">
+    <div class="scenario-card active" data-scenario="gaming" onclick="selectScenario('gaming')">
+      <div class="icon">&#127918;</div>
+      <div class="name">游戏</div>
+      <div class="desc">高帧率 / 高画质 / 3A大作</div>
+    </div>
+    <div class="scenario-card" data-scenario="productivity" onclick="selectScenario('productivity')">
+      <div class="icon">&#128187;</div>
+      <div class="name">生产力 / 工作站</div>
+      <div class="desc">视频剪辑 / 3D渲染 / 编程</div>
+    </div>
+    <div class="scenario-card" data-scenario="ai" onclick="selectScenario('ai')">
+      <div class="icon">&#129302;</div>
+      <div class="name">AI / 深度学习</div>
+      <div class="desc">大模型推理 / 训练 / 数据科学</div>
+    </div>
+    <div class="scenario-card" data-scenario="office" onclick="selectScenario('office')">
+      <div class="icon">&#128188;</div>
+      <div class="name">日常办公</div>
+      <div class="desc">文档 / 网页 / 轻度图像处理</div>
+    </div>
+    <div class="scenario-card" data-scenario="apple" onclick="selectScenario('apple')" style="background:linear-gradient(135deg,#f5f5f7,#fff);">
+      <div class="icon">&#63743;</div>
+      <div class="name">Apple 生态</div>
+      <div class="desc">Mac Studio / 统一内存 / AI创作</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="control-group" style="flex:1.5;min-width:300px;">
+      <label>预算 (含全部配件) — <span id="budgetTier" style="color:#0071e3;font-weight:600;">经济型</span></label>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="range" id="budgetSlider" min="3000" max="50000" step="500" value="8000" oninput="syncBudget('slider')" style="flex:1;min-width:120px;">
+        <input type="number" id="budgetInput" value="8000" min="1000" step="500" oninput="syncBudget('input')" style="width:100px;padding:6px 10px;border:1px solid #d2d2d7;border-radius:8px;font-size:14px;text-align:right;outline:none;" onfocus="this.select()">
+        <span class="budget-display" id="budgetDisplay">&#165;8,000</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
+        <button class="budget-preset" onclick="setBudget(3000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;3K</button>
+        <button class="budget-preset" onclick="setBudget(5000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;5K</button>
+        <button class="budget-preset active" onclick="setBudget(8000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #0071e3;border-radius:4px;background:#e8f0fe;cursor:pointer;color:#0071e3;font-weight:500;">&#165;8K</button>
+        <button class="budget-preset" onclick="setBudget(10000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;10K</button>
+        <button class="budget-preset" onclick="setBudget(15000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;15K</button>
+        <button class="budget-preset" onclick="setBudget(20000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;20K</button>
+        <button class="budget-preset" onclick="setBudget(25000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;25K</button>
+        <button class="budget-preset" onclick="setBudget(30000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;30K</button>
+        <button class="budget-preset" onclick="setBudget(35000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;35K</button>
+        <button class="budget-preset" onclick="setBudget(40000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;40K</button>
+        <button class="budget-preset" onclick="setBudget(50000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">&#165;50K</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <label>品牌偏好</label>
+      <select id="brandPref" onchange="rebuild()">
+        <option value="all">不限品牌</option>
+        <option value="intel-nvidia">Intel + NVIDIA</option>
+        <option value="amd">AMD 全家桶</option>
+        <option value="intel-amd">Intel + AMD</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>内存架构</label>
+      <select id="memPref" onchange="rebuild()">
+        <option value="auto">自动推荐</option>
+        <option value="ddr5">DDR5 优先</option>
+        <option value="ddr4">DDR4 经济</option>
+        <option value="ecc">ECC (工作站)</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>购买渠道</label>
+      <div class="mode-toggle" id="warrantyToggle">
+        <button class="mode-btn active" data-mode="official" onclick="setWarrantyMode('official')">&#128230; 官方自营 (保)</button>
+        <button class="mode-btn" data-mode="all" onclick="setWarrantyMode('all')">&#128176; 全渠道 (省)</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <label>主板品牌偏好</label>
+      <select id="mbBrand" onchange="rebuild()" style="font-size:12px;">
+        <option value="auto">自动匹配（按预算最优推荐）</option>
+        <option value="asus">华硕 (ASUS) — 品质标杆，ROG信仰</option>
+        <option value="msi">微星 (MSI) — 迫击炮经典，稳扎稳打</option>
+        <option value="gigabyte">技嘉 (GIGABYTE) — 用料扎实，性价比</option>
+        <option value="asrock">华擎 (ASRock) — AM5性价比之王</option>
+        <option value="maxsun">铭瑄 (MAXSUN) — 极致低价，入门首选</option>
+      </select>
+    </div>
+    <div style="flex:1;text-align:right;">
+      <button class="btn" onclick="rebuild()">&#128269; 生成推荐</button>
+    </div>
+  </div>
+
+  <!-- Weight panel -->
+  <div class="result-section">
+    <div class="section-header">
+      <h2>权重调整</h2>
+      <span class="section-sub">拖动滑块调整各因素的重要性</span>
+    </div>
+    <div class="weight-panel" id="weightPanel"></div>
+  </div>
+
+  <!-- Bottleneck Analysis -->
+  <div class="result-section" id="bnSection">
+    <div class="section-header">
+      <h2>&#9888; 性能瓶颈分析</h2>
+      <span class="section-sub" id="bnOverall">系统会自动检测并避免瓶颈</span>
+    </div>
+    <div class="bottleneck-grid" id="bnGrid"></div>
+  </div>
+
+  <!-- Result: Summary -->
+  <div class="result-section" id="resultSummary">
+    <div class="section-header">
+      <h2>推荐配置总览</h2>
+      <span class="section-sub" id="scenarioLabel">游戏方案</span>
+    </div>
+    <div class="build-summary" id="summaryCards"></div>
+  </div>
+
+  <!-- Result: Component Table -->
+  <div class="result-section">
+    <div class="section-header">
+      <h2>详细配置清单</h2>
+      <span class="section-sub">红绿标价最优/最差</span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="component-table" id="buildTable">
+        <thead id="buildHead"></thead>
+        <tbody id="buildBody"></tbody>
+      </table>
+    </div>
+    <div class="budget-bar-wrap">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#86868b;margin-bottom:6px;">
+        <span>已花费: <strong id="spentDisplay">&#165;0</strong></span>
+        <span id="remainDisplay">预算: &#165;8,000</span>
+      </div>
+      <div class="budget-bar">
+        <div class="budget-fill" id="budgetFill" style="width:0%;background:#0071e3;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alternatives -->
+  <div class="result-section">
+    <div class="section-header">
+      <h2>备选方案</h2>
+      <span class="section-sub">同预算区间的其他推荐组合</span>
+    </div>
+    <div class="alt-grid" id="altGrid"></div>
+  </div>
+
+  <!-- All components data table -->
+  <div class="result-section">
+    <div class="section-header">
+      <h2>全部配件数据一览</h2>
+      <span class="section-sub">按厂商区分 | 计算卡: NVIDIA / AMD / Apple Silicon</span>
+    </div>
+    <div style="overflow-x:auto;"><table class="component-table" id="allCompTable"><tbody id="allCompBody"></tbody></table></div>
+  </div>
+
+  <!-- Price History -->
+  <div class="result-section" id="priceSection">
+    <div class="section-header">
+      <h2>&#128200; 京东/天猫参考价格走势</h2>
+      <span class="section-sub">基于首发价与当前市场价估算 | 售价仅供参考 以实际购买为准</span>
+    </div>
+    <div style="padding:8px 24px 0;">
+      <select id="priceChartSelect" onchange="renderPriceChart()" style="padding:6px 12px;border:1px solid #d2d2d7;border-radius:8px;font-size:13px;max-width:320px;">
+        <optgroup label="CPU"></optgroup>
+        <optgroup label="GPU"></optgroup>
+      </select>
+      <span id="priceBadge" style="margin-left:10px;font-size:12px;color:#86868b;"></span>
+    </div>
+    <div style="padding:12px 24px 20px;">
+      <canvas id="priceChartCanvas" style="width:100%;height:280px;" role="img" aria-label="Price history chart">Price chart requires JavaScript</canvas>
+    </div>
+    <div style="padding:0 24px 16px;display:flex;flex-wrap:wrap;gap:16px;font-size:11px;color:#86868b;border-top:1px solid #e8e8ed;padding-top:12px;">
+      <span>&#9679; <span style="color:#0071e3;">京东官方旗舰店参考价</span></span>
+      <span>&#9679; <span style="color:#ff9500;">淘宝天猫参考价</span></span>
+      <span>&#9679; <span style="color:#34c759;">首发价</span> <span style="color:#86868b;">|</span> <span style="color:#c0392b;">当前价</span></span>
+      <span style="margin-left:auto;">数据来源: 电商平台公开信息 | 更新于 2026-06</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== COMPONENT DATABASE ====================
+
+// Data last updated: 2026-06 via web search (Intel/AMD/NVIDIA official + JD.com reference)
+// Price sources: Intel RCP / NVIDIA MSRP / JD.com official store / Taobao flagship
+// Price history (months) estimated from launch trends; real-time prices may vary
+
+var priceHistory = {}; // populated below for chart rendering
+
+var DB = {
+  cpu: [
+    // ======= Intel Core Ultra 200S Plus (Arrow Lake Refresh, 2026 Q1) =======
+    { id:'U3-205', name:'Intel Core Ultra 3 205', brand:'intel', cores:8, threads:8, boost:4.8, tdp:65, singleScore:1980, multiScore:12000, igpu:true, price:699, gen:'Arrow Lake', socket:'LGA1851', note:'入门Arrow Lake', official:true, source:'intel+jd', launchPrice:749, launchDate:'2025-03' },
+    { id:'U5-225', name:'Intel Core Ultra 5 225', brand:'intel', cores:10, threads:10, boost:4.9, tdp:65, singleScore:2150, multiScore:16000, igpu:true, price:1099, gen:'Arrow Lake', socket:'LGA1851', note:'主流办公', official:true, source:'intel+jd', launchPrice:1199, launchDate:'2025-03' },
+    { id:'U5-225H', name:'Intel Core Ultra 5 225H', brand:'intel', cores:10, threads:10, boost:5.0, tdp:85, singleScore:2250, multiScore:17500, igpu:true, price:1299, gen:'Arrow Lake', socket:'LGA1851', note:'高频率主流', official:true, source:'intel+jd', launchPrice:1399, launchDate:'2025-04' },
+    { id:'U5-245K', name:'Intel Core Ultra 5 245K', brand:'intel', cores:14, threads:14, boost:5.2, tdp:125, singleScore:2320, multiScore:22000, igpu:true, price:1799, gen:'Arrow Lake', socket:'LGA1851', note:'主流游戏', official:true, source:'intel+jd+gkw', launchPrice:1999, launchDate:'2025-03' },
+    { id:'U5-240K-Plus', name:'Intel Core Ultra 5 240K Plus', brand:'intel', cores:14, threads:14, boost:5.3, tdp:125, singleScore:2380, multiScore:22800, igpu:true, price:1599, gen:'Arrow Lake', socket:'LGA1851', note:'Plus性价比', official:true, source:'intel+jd+gkw', launchPrice:1699, launchDate:'2026-03' },
+    { id:'U7-265K', name:'Intel Core Ultra 7 265K', brand:'intel', cores:20, threads:20, boost:5.5, tdp:125, singleScore:2550, multiScore:33000, igpu:true, price:2499, gen:'Arrow Lake', socket:'LGA1851', note:'高端游戏', official:true, source:'intel+jd+gkw', launchPrice:2799, launchDate:'2025-03' },
+    { id:'U7-270K-Plus', name:'Intel Core Ultra 7 270K Plus', brand:'intel', cores:24, threads:24, boost:5.5, tdp:125, singleScore:2650, multiScore:37000, igpu:true, price:2199, gen:'Arrow Lake', socket:'LGA1851', note:'Plus无敌性价比', official:true, source:'intel+jd+gkw', launchPrice:2299, launchDate:'2026-03' },
+    { id:'U9-285K', name:'Intel Core Ultra 9 285K', brand:'intel', cores:24, threads:24, boost:5.7, tdp:125, singleScore:2750, multiScore:43000, igpu:true, price:4499, gen:'Arrow Lake', socket:'LGA1851', note:'旗舰', official:true, source:'intel+jd+gkw', launchPrice:4999, launchDate:'2025-03' },
+    // ======= AMD Ryzen 9000 (Zen5, 2025-2026) =======
+    { id:'R5-9600', name:'AMD Ryzen 5 9600', brand:'amd', cores:6, threads:12, boost:5.2, tdp:65, singleScore:2250, multiScore:16800, igpu:true, price:1349, gen:'Zen5', socket:'AM5', note:'入门Zen5', official:true, source:'amd+jd', launchPrice:1499, launchDate:'2025-07' },
+    { id:'R5-9600X', name:'AMD Ryzen 5 9600X', brand:'amd', cores:6, threads:12, boost:5.4, tdp:105, singleScore:2400, multiScore:18500, igpu:true, price:1799, gen:'Zen5', socket:'AM5', note:'主流游戏', official:true, source:'amd+jd+gkw', launchPrice:1999, launchDate:'2025-08' },
+    { id:'R7-9700X', name:'AMD Ryzen 7 9700X', brand:'amd', cores:8, threads:16, boost:5.5, tdp:105, singleScore:2550, multiScore:25000, igpu:true, price:2499, gen:'Zen5', socket:'AM5', note:'游戏甜点', official:true, source:'amd+jd+gkw', launchPrice:2699, launchDate:'2025-08' },
+    { id:'R7-9800X3D', name:'AMD Ryzen 7 9800X3D', brand:'amd', cores:8, threads:16, boost:5.2, tdp:120, singleScore:2480, multiScore:26500, igpu:true, price:3599, gen:'Zen5', socket:'AM5', note:'游戏神U', official:true, source:'amd+jd+gkw', launchPrice:3999, launchDate:'2025-11' },
+    { id:'R7-9850X3D', name:'AMD Ryzen 7 9850X3D', brand:'amd', cores:8, threads:16, boost:5.3, tdp:160, singleScore:2520, multiScore:27500, igpu:true, price:3799, gen:'Zen5', socket:'AM5', note:'3D V-Cache增强', official:true, source:'amd+jd', launchPrice:4199, launchDate:'2026-03' },
+    { id:'R9-9900X', name:'AMD Ryzen 9 9900X', brand:'amd', cores:12, threads:24, boost:5.6, tdp:170, singleScore:2620, multiScore:38000, igpu:true, price:3299, gen:'Zen5', socket:'AM5', note:'生产力甜点', official:true, source:'amd+jd+gkw', launchPrice:3599, launchDate:'2025-08' },
+    { id:'R9-9950X', name:'AMD Ryzen 9 9950X', brand:'amd', cores:16, threads:32, boost:5.7, tdp:170, singleScore:2680, multiScore:45000, igpu:true, price:4699, gen:'Zen5', socket:'AM5', note:'旗舰', official:true, source:'amd+jd+gkw', launchPrice:4999, launchDate:'2025-08' },
+    { id:'R9-9950X3D', name:'AMD Ryzen 9 9950X3D', brand:'amd', cores:16, threads:32, boost:5.7, tdp:170, singleScore:2720, multiScore:47000, igpu:true, price:7499, gen:'Zen5', socket:'AM5', note:'双3D V-Cache', official:true, source:'amd+jd', launchPrice:7999, launchDate:'2026-03' },
+    { id:'R9-9950X3D2', name:'AMD Ryzen 9 9950X3D2', brand:'amd', cores:16, threads:32, boost:5.8, tdp:200, singleScore:2780, multiScore:49000, igpu:true, price:8999, gen:'Zen5', socket:'AM5', note:'终极旗舰200W', official:true, source:'amd', launchPrice:9499, launchDate:'2026-04' },
+    // ======= Legacy CPUs (Steam主流配置 & 经典) =======
+    { id:'i5-12400F', name:'Intel Core i5-12400F', brand:'intel', cores:6, threads:12, boost:4.4, tdp:65, singleScore:1820, multiScore:14500, igpu:false, price:569, gen:'12th', socket:'LGA1700', note:'Steam王者', official:true, source:'intel+jd', launchPrice:1299, launchDate:'2022-01' },
+    { id:'i5-11400F', name:'Intel Core i5-11400F', brand:'intel', cores:6, threads:12, boost:4.4, tdp:65, singleScore:1580, multiScore:12000, igpu:false, price:429, gen:'11th', socket:'LGA1200', note:'前代主流', official:false, source:'intel', launchPrice:1199, launchDate:'2021-03' },
+    { id:'i7-12700KF', name:'Intel Core i7-12700KF', brand:'intel', cores:12, threads:20, boost:5.0, tdp:190, singleScore:1990, multiScore:23200, igpu:false, price:1199, gen:'12th', socket:'LGA1700', note:'经典游戏U', official:false, source:'intel', launchPrice:2899, launchDate:'2021-11' },
+    { id:'i9-12900K', name:'Intel Core i9-12900K', brand:'intel', cores:16, threads:24, boost:5.2, tdp:241, singleScore:2100, multiScore:29500, igpu:true, price:1699, gen:'12th', socket:'LGA1700', note:'旗舰经典', official:false, source:'intel', launchPrice:4999, launchDate:'2021-11' },
+    { id:'R5-5600', name:'AMD Ryzen 5 5600', brand:'amd', cores:6, threads:12, boost:4.4, tdp:65, singleScore:1650, multiScore:12500, igpu:false, price:469, gen:'Zen3', socket:'AM4', note:'AM4性价比', official:false, source:'amd', launchPrice:1199, launchDate:'2022-04' },
+    { id:'R7-5800X3D', name:'AMD Ryzen 7 5800X3D', brand:'amd', cores:8, threads:16, boost:4.5, tdp:105, singleScore:1780, multiScore:21400, igpu:false, price:1599, gen:'Zen3', socket:'AM4', note:'AM4游戏神U', official:false, source:'amd+gkw', launchPrice:3299, launchDate:'2022-04' },
+    { id:'R9-5950X', name:'AMD Ryzen 9 5950X', brand:'amd', cores:16, threads:32, boost:4.9, tdp:105, singleScore:1800, multiScore:28650, igpu:false, price:1899, gen:'Zen3', socket:'AM4', note:'AM4旗舰', official:false, source:'amd', launchPrice:4999, launchDate:'2020-11' }
+  ],
+  gpu: [
+    // ======= NVIDIA RTX 50 Series (Blackwell, 2025-2026) =======
+    { id:'RTX5060', name:'NVIDIA RTX 5060', brand:'nvidia', vram:8, cuda:4608, boost:2520, tdp:150, gameScore:16000, aiScore:18000, price:2399, note:'1080p甜品', official:true, source:'nvidia+jd', launchPrice:2599, launchDate:'2025-05' },
+    { id:'RTX5060Ti-8', name:'NVIDIA RTX 5060 Ti 8G', brand:'nvidia', vram:8, cuda:6400, boost:2580, tdp:180, gameScore:19000, aiScore:23000, price:2999, note:'2K入门', official:true, source:'nvidia+jd', launchPrice:3199, launchDate:'2025-04' },
+    { id:'RTX5060Ti-16', name:'NVIDIA RTX 5060 Ti 16G', brand:'nvidia', vram:16, cuda:6400, boost:2580, tdp:180, gameScore:19500, aiScore:24000, price:3699, note:'AI入门16G', official:true, source:'nvidia+jd+gkw', launchPrice:3999, launchDate:'2025-04' },
+    { id:'RTX5070', name:'NVIDIA RTX 5070', brand:'nvidia', vram:12, cuda:6400, boost:2650, tdp:220, gameScore:24000, aiScore:28000, price:4499, note:'2K高帧率', official:true, source:'nvidia+jd+gkw', launchPrice:4899, launchDate:'2025-03' },
+    { id:'RTX5070Ti', name:'NVIDIA RTX 5070 Ti', brand:'nvidia', vram:16, cuda:8960, boost:2720, tdp:300, gameScore:28000, aiScore:36000, price:6299, note:'4K入门', official:true, source:'nvidia+jd+gkw', launchPrice:6899, launchDate:'2025-02' },
+    { id:'RTX5080', name:'NVIDIA RTX 5080', brand:'nvidia', vram:16, cuda:10752, boost:2800, tdp:360, gameScore:33000, aiScore:45000, price:8599, note:'4K高帧率', official:true, source:'nvidia+jd+gkw', launchPrice:9299, launchDate:'2025-02' },
+    { id:'RTX5090D', name:'NVIDIA RTX 5090 D', brand:'nvidia', vram:32, cuda:17000, boost:2850, tdp:500, gameScore:38000, aiScore:75000, price:16499, note:'旗舰AI 32G', official:true, source:'nvidia+jd', launchPrice:17999, launchDate:'2025-02' },
+    // ======= AMD RDNA 4 =======
+    { id:'RX9060XT', name:'AMD RX 9060 XT', brand:'amd', vram:12, cuda:3584, boost:2700, tdp:180, gameScore:17000, aiScore:10000, price:2399, note:'主流游戏', official:true, source:'amd+jd', launchPrice:2599, launchDate:'2025-06' },
+    { id:'RX9070', name:'AMD RX 9070', brand:'amd', vram:16, cuda:4096, boost:2750, tdp:220, gameScore:21500, aiScore:13500, price:3599, note:'2K游戏', official:true, source:'amd+jd+gkw', launchPrice:3899, launchDate:'2025-06' },
+    { id:'RX9070XT', name:'AMD RX 9070 XT', brand:'amd', vram:16, cuda:5120, boost:2850, tdp:260, gameScore:24500, aiScore:16000, price:4299, note:'高性能游戏', official:true, source:'amd+jd+gkw', launchPrice:4699, launchDate:'2025-06' },
+    // ======= Legacy GPUs (Steam主流 & 经典) =======
+    { id:'RTX3060', name:'NVIDIA RTX 3060 12G', brand:'nvidia', vram:12, cuda:3584, boost:1777, tdp:170, gameScore:12000, aiScore:8500, price:1499, note:'Steam第一', official:false, source:'nvidia+gkw', launchPrice:2499, launchDate:'2021-02' },
+    { id:'RTX3060Ti', name:'NVIDIA RTX 3060 Ti', brand:'nvidia', vram:8, cuda:4864, boost:1665, tdp:200, gameScore:13500, aiScore:9800, price:1699, note:'Steam神器', official:false, source:'nvidia+gkw', launchPrice:2999, launchDate:'2020-12' },
+    { id:'RTX3070', name:'NVIDIA RTX 3070', brand:'nvidia', vram:8, cuda:5888, boost:1725, tdp:220, gameScore:15000, aiScore:11500, price:1899, note:'2K入门', official:false, source:'nvidia+gkw', launchPrice:3899, launchDate:'2020-10' },
+    { id:'RTX3080', name:'NVIDIA RTX 3080 10G', brand:'nvidia', vram:10, cuda:8704, boost:1710, tdp:320, gameScore:19500, aiScore:16800, price:2699, note:'4K经典', official:false, source:'nvidia+gkw', launchPrice:5499, launchDate:'2020-09' },
+    { id:'RTX3090', name:'NVIDIA RTX 3090', brand:'nvidia', vram:24, cuda:10496, boost:1695, tdp:350, gameScore:22000, aiScore:28000, price:4599, note:'大显存旧旗舰', official:false, source:'nvidia+gkw', launchPrice:11999, launchDate:'2020-09' },
+    { id:'RTX2060', name:'NVIDIA RTX 2060', brand:'nvidia', vram:6, cuda:1920, boost:1680, tdp:160, gameScore:9500, aiScore:6200, price:899, note:'光追入门', official:false, source:'nvidia', launchPrice:2499, launchDate:'2019-01' },
+    { id:'GTX1660S', name:'NVIDIA GTX 1660 Super', brand:'nvidia', vram:6, cuda:1408, boost:1785, tdp:125, gameScore:7800, aiScore:3000, price:599, note:'经典甜品', official:false, source:'nvidia', launchPrice:1599, launchDate:'2019-10' },
+    { id:'GTX1060', name:'NVIDIA GTX 1060 6G', brand:'nvidia', vram:6, cuda:1280, boost:1708, tdp:120, gameScore:6000, aiScore:1800, price:349, note:'永世经典', official:false, source:'nvidia', launchPrice:1999, launchDate:'2016-07' },
+    { id:'GTX980', name:'NVIDIA GTX 980', brand:'nvidia', vram:4, cuda:2048, boost:1216, tdp:165, gameScore:4500, aiScore:1000, price:229, note:'Maxwell经典', official:false, source:'nvidia', launchPrice:3999, launchDate:'2014-09' },
+    { id:'RX580', name:'AMD RX 580 8G', brand:'amd', vram:8, cuda:2304, boost:1340, tdp:185, gameScore:5500, aiScore:1200, price:299, note:'A卡经典', official:false, source:'amd', launchPrice:1899, launchDate:'2017-04' }
+  ],
+  ram: [
+    { id:'D4-16-3200', name:'DDR4 16GB 3200MHz', capacity:16, gen:'ddr4', freq:3200, ecc:false, price:229, note:'经济', official:true },
+    { id:'D4-32-3200', name:'DDR4 32GB 3200MHz', capacity:32, gen:'ddr4', freq:3200, ecc:false, price:429, note:'主流', official:true },
+    { id:'D4-64-3200', name:'DDR4 64GB 3200MHz', capacity:64, gen:'ddr4', freq:3200, ecc:false, price:829, note:'大容量', official:true },
+    { id:'D5-16-5600', name:'DDR5 16GB 5600MHz', capacity:16, gen:'ddr5', freq:5600, ecc:false, price:299, note:'入门D5', official:true },
+    { id:'D5-32-5600', name:'DDR5 32GB 5600MHz', capacity:32, gen:'ddr5', freq:5600, ecc:false, price:599, note:'主流D5', official:true },
+    { id:'D5-32-6000', name:'DDR5 32GB 6000MHz EXPO', capacity:32, gen:'ddr5', freq:6000, ecc:false, price:699, note:'游戏甜点', official:true },
+    { id:'D5-64-6000', name:'DDR5 64GB 6000MHz EXPO', capacity:64, gen:'ddr5', freq:6000, ecc:false, price:1299, note:'大容量D5', official:true },
+    { id:'D5-16-7200', name:'DDR5 16GB 7200MHz XMP', capacity:16, gen:'ddr5', freq:7200, ecc:false, price:599, note:'高频入门', official:true },
+    { id:'D5-32-7200', name:'DDR5 32GB 7200MHz XMP', capacity:32, gen:'ddr5', freq:7200, ecc:false, price:1199, note:'高频主流', official:true },
+    { id:'D5-32-7600', name:'DDR5 32GB 7600MHz XMP', capacity:32, gen:'ddr5', freq:7600, ecc:false, price:1699, note:'发烧D5', official:true },
+    { id:'D5-64-7600', name:'DDR5 64GB 7600MHz XMP', capacity:64, gen:'ddr5', freq:7600, ecc:false, price:3299, note:'大容量高频', official:true },
+    { id:'D5-32-8000', name:'DDR5 32GB 8000MHz XMP', capacity:32, gen:'ddr5', freq:8000, ecc:false, price:2499, note:'旗舰频率', official:true },
+    { id:'D5-64-8000', name:'DDR5 64GB 8000MHz XMP', capacity:64, gen:'ddr5', freq:8000, ecc:false, price:4999, note:'大容量旗舰', official:false },
+    { id:'D5-32-8400', name:'DDR5 32GB 8400MHz XMP', capacity:32, gen:'ddr5', freq:8400, ecc:false, price:3499, note:'超频旗舰', official:false },
+    { id:'D5-128-5600', name:'DDR5 128GB 5600MHz', capacity:128, gen:'ddr5', freq:5600, ecc:false, price:2599, note:'工作站', official:true },
+    { id:'D5-32-4800-ECC', name:'DDR5 ECC 32GB 4800MHz', capacity:32, gen:'ddr5', freq:4800, ecc:true, price:899, note:'工作站ECC', official:true },
+    { id:'D5-64-4800-ECC', name:'DDR5 ECC 64GB 4800MHz', capacity:64, gen:'ddr5', freq:4800, ecc:true, price:1799, note:'工作站ECC大容量', official:false },
+    { id:'D5-128-4800-ECC', name:'DDR5 ECC 128GB 4800MHz', capacity:128, gen:'ddr5', freq:4800, ecc:true, price:3599, note:'工作站ECC旗舰', official:false }
+  ],
+  storage: [
+    { id:'NV1-512', name:'NVMe SSD 512GB', capacity:512, seqRead:3500, price:299, note:'基础', official:true },
+    { id:'NV1-1T', name:'NVMe SSD 1TB PCIe 4.0', capacity:1024, seqRead:7000, price:499, note:'主流', official:true },
+    { id:'NV1-2T', name:'NVMe SSD 2TB PCIe 4.0', capacity:2048, seqRead:7000, price:899, note:'大容量', official:true },
+    { id:'NV1-4T', name:'NVMe SSD 4TB PCIe 4.0', capacity:4096, seqRead:7000, price:1899, note:'仓库盘', official:false },
+    { id:'SATA-2T', name:'SATA SSD 2TB', capacity:2048, seqRead:560, price:799, note:'游戏仓储', official:true }
+  ],
+  mb: [
+    { id:'Z890-A', name:'华硕 ROG Z890-A GAMING', brand:'asus', chipset:'Z890', socket:'LGA1851', ddr:'ddr5', ddrMax:256, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:false, price:2999, note:'Intel旗舰D5', reason:'顶级PCIe 5.0+20相供电+WiFi7，适合i9-285K超频与游戏旗舰', official:true, source:'asus+jd' },
+    { id:'B860M-A', name:'华硕 TUF B860M-PLUS', brand:'asus', chipset:'B860', socket:'LGA1851', ddr:'ddr5', ddrMax:256, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:false, price:1399, note:'Intel主流D5', reason:'华硕TUF军规用料+PCIe5.0显卡槽+2.5G网口，游戏与工作站的平衡之选', official:true, source:'asus+jd' },
+    { id:'B860M-M', name:'微星 MAG B860M MORTAR', brand:'msi', chipset:'B860', socket:'LGA1851', ddr:'ddr5', ddrMax:256, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:false, price:1299, note:'Intel主流D5', reason:'微星迫击炮经典12+1+1相供电+双M.2散热片，性价比与稳定性并重', official:true, source:'msi+jd' },
+    { id:'B860M-G', name:'技嘉 B860M GAMING', brand:'gigabyte', chipset:'B860', socket:'LGA1851', ddr:'ddr5', ddrMax:256, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:false, price:1199, note:'性价比D5', reason:'技嘉低阻抗PCB+EZ-Latch快拆+价格最亲民，入门Arrow Lake首选', official:true, source:'gigabyte+jd' },
+    { id:'B860M-MAX', name:'铭瑄 B860M GAMING', brand:'maxsun', chipset:'B860', socket:'LGA1851', ddr:'ddr5', ddrMax:192, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:false, price:899, note:'高性价比', reason:'铭瑄挑战极致性价比，899元即享B860+PCIe5.0，预算紧张时的首选', official:true, source:'maxsun+jd' },
+    { id:'Z790-H', name:'华硕 ROG Z790 HERO', brand:'asus', chipset:'Z790', socket:'LGA1700', ddr:'ddr5', ddrMax:192, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:false, price:2199, note:'LGA1700旗舰', reason:'ROG旗舰级19相供电+AI超频+雷电4，i9-14900K最佳搭档', official:false, source:'asus' },
+    { id:'B760M-A', name:'华硕 TUF B760M-PLUS D4', brand:'asus', chipset:'B760', socket:'LGA1700', ddr:'ddr4', ddrMax:128, ddrChannel:'dual', ddrSlot:4, pcie5:false, ecc:false, price:799, note:'经济Intel D4', reason:'保留DDR4兼容旧内存+TUF军规品质+B760主流芯片组，升级用户的省钱首选', official:true, source:'asus+jd' },
+    { id:'B760M-M', name:'微星 MAG B760M MORTAR D4', brand:'msi', chipset:'B760', socket:'LGA1700', ddr:'ddr4', ddrMax:128, ddrChannel:'dual', ddrSlot:4, pcie5:false, ecc:false, price:699, note:'主流D4', reason:'699元买一线品牌B760+D4，12代i5/i7的绝佳伴侣，二手市场也热门', official:true, source:'msi+jd' },
+    { id:'X870E-A', name:'华硕 ROG X870E CROSSHAIR', brand:'asus', chipset:'X870E', socket:'AM5', ddr:'ddr5', ddrMax:256, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:true, price:3599, note:'AMD旗舰', reason:'AMD顶级X870E+双PCIe5.0+20相110A供电，R9-9950X3D极限超频之选', official:true, source:'asus+jd' },
+    { id:'B850M-A', name:'华硕 TUF B850M-PLUS', brand:'asus', chipset:'B850', socket:'AM5', ddr:'ddr5', ddrMax:256, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:true, price:1399, note:'AMD主流', reason:'B850中端标杆+支持ECC+PCIe5.0，R7/R9系列稳健之选，工作站也胜任', official:true, source:'asus+jd' },
+    { id:'B850M-M', name:'微星 MAG B850M MORTAR', brand:'msi', chipset:'B850', socket:'AM5', ddr:'ddr5', ddrMax:256, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:true, price:1299, note:'AMD主流D5', reason:'微星迫击炮家族AMD版，14+2相供电+EZ M.2+WiFi6E，口碑销量双冠', official:true, source:'msi+jd' },
+    { id:'B850M-G', name:'技嘉 B850M GAMING', brand:'gigabyte', chipset:'B850', socket:'AM5', ddr:'ddr5', ddrMax:256, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:true, price:1199, note:'AMD性价比', reason:'技嘉B850用料扎实+传感器精准+Ryzen 9000系列调优到位，性价比之选', official:true, source:'gigabyte+jd' },
+    { id:'B850M-AR', name:'华擎 B850M PRO RS', brand:'asrock', chipset:'B850', socket:'AM5', ddr:'ddr5', ddrMax:256, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:true, price:1099, note:'AMD性价比', reason:'华擎PRO系列稳定可靠+价格最低的B850之一，追求AM5性价比的首选', official:true, source:'asrock+jd' },
+    { id:'A620M', name:'华硕 PRIME A620M-A', brand:'asus', chipset:'A620', socket:'AM5', ddr:'ddr5', ddrMax:192, ddrChannel:'dual', ddrSlot:2, pcie5:false, ecc:true, price:649, note:'经济AMD', reason:'AM5最低门槛+支持ECC内存，R5系列办公/入门游戏的最佳省钱方案', official:true, source:'asus+jd' },
+    { id:'B550M-A', name:'华硕 TUF B550M-PLUS', brand:'asus', chipset:'B550', socket:'AM4', ddr:'ddr4', ddrMax:128, ddrChannel:'dual', ddrSlot:4, pcie5:false, ecc:false, price:549, note:'AM4主流', reason:'AM4平台的最后辉煌，TUF B550稳如磐石+支持Ryzen 5000全系，老平台升级首选', official:false, source:'asus' },
+    { id:'B550M-M', name:'微星 MAG B550M MORTAR', brand:'msi', chipset:'B550', socket:'AM4', ddr:'ddr4', ddrMax:128, ddrChannel:'dual', ddrSlot:4, pcie5:false, ecc:false, price:499, note:'AM4性价比', reason:'AM4经典神板+迫击炮同级最强供电+R5-5600/5800X3D的最佳归宿', official:false, source:'msi' },
+    { id:'W680', name:'技嘉 W680 ECC (LGA1700)', brand:'gigabyte', chipset:'W680', socket:'LGA1700', ddr:'ddr5', ddrMax:512, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:true, price:2899, note:'工作站ECC', reason:'Intel平台唯一原生ECC+DDR5+PCIe5.0工作站芯片组，数据完整性第一优先', official:false, source:'gigabyte' }
+  ],
+  psu: [
+    { id:'PSU-550', name:'550W 80+ Bronze', wattage:550, rating:'bronze', price:299, note:'入门', official:true },
+    { id:'PSU-650', name:'650W 80+ Gold', wattage:650, rating:'gold', price:449, note:'主流', official:true },
+    { id:'PSU-750', name:'750W 80+ Gold', wattage:750, rating:'gold', price:599, note:'游戏', official:true },
+    { id:'PSU-850', name:'850W 80+ Gold', wattage:850, rating:'gold', price:749, note:'高性能', official:true },
+    { id:'PSU-1000', name:'1000W 80+ Gold', wattage:1000, rating:'gold', price:999, note:'旗舰', official:true },
+    { id:'PSU-1200', name:'1200W 80+ Platinum', wattage:1200, rating:'platinum', price:1599, note:'发烧', official:false }
+  ],
+  cooler: [
+    { id:'AIR-S', name:'风冷 四热管', type:'air', tdpCapable:120, price:79, note:'入门', official:true },
+    { id:'AIR-M', name:'风冷 双塔六热管', type:'air', tdpCapable:180, price:149, note:'主流', official:true },
+    { id:'AIO-240', name:'240mm 一体水冷', type:'aio', tdpCapable:250, price:399, note:'主流水冷', official:true },
+    { id:'AIO-360', name:'360mm 一体水冷', type:'aio', tdpCapable:350, price:699, note:'高端水冷', official:true },
+    { id:'AIO-420', name:'420mm 一体水冷', type:'aio', tdpCapable:400, price:1099, note:'旗舰水冷', official:false }
+  ],
+  case: [
+    { id:'CASE-E', name:'经济型机箱 (M-ATX)', size:'m-atx', price:149, note:'经济', official:true },
+    { id:'CASE-M', name:'主流机箱 (ATX)', size:'atx', price:299, note:'主流', official:true },
+    { id:'CASE-H', name:'高性能机箱 (ATX) 散热加强', size:'atx', price:499, note:'散热加强', official:true },
+    { id:'CASE-F', name:'全塔工作站机箱', size:'e-atx', price:899, note:'工作站', official:false }
+  ],
+  monitor: [
+    { id:'MON-1080', name:'24" 1080p 165Hz IPS', resolution:'1920x1080', size:24, hz:165, price:899, note:'电竞入门', official:true },
+    { id:'MON-2K', name:'27" 2K 180Hz IPS', resolution:'2560x1440', size:27, hz:180, price:1599, note:'主流电竞', official:true },
+    { id:'MON-2K-H', name:'27" 2K 240Hz OLED', resolution:'2560x1440', size:27, hz:240, price:3999, note:'高端电竞', official:false },
+    { id:'MON-4K', name:'27" 4K 160Hz IPS', resolution:'3840x2160', size:27, hz:160, price:3299, note:'4K游戏', official:true },
+    { id:'MON-4K-P', name:'32" 4K 60Hz IPS HDR', resolution:'3840x2160', size:32, hz:60, price:2499, note:'生产力', official:true },
+    { id:'MON-4K-H', name:'32" 4K 144Hz MiniLED', resolution:'3840x2160', size:32, hz:144, price:5999, note:'旗舰', official:false },
+    { id:'MON-BASIC', name:'24" 1080p 75Hz IPS', resolution:'1920x1080', size:24, hz:75, price:699, note:'办公', official:true }
+  ],
+  peripheral: [
+    { id:'KB-E', name:'办公键鼠套装', type:'office', price:99, note:'办公', official:true },
+    { id:'KB-M', name:'机械键盘 + 游戏鼠标', type:'gaming', price:399, note:'游戏入门', official:true },
+    { id:'KB-H', name:'RGB机械键盘 + 轻量鼠标', type:'gaming', price:799, note:'游戏进阶', official:true }
+  ],
+  compute: [
+    // ======= NVIDIA =======
+    { id:'GB10-BASE', name:'NVIDIA GB10 (DGX Spark)', brand:'nvidia', type:'superchip', cpuCores:20, gpuCores:6144, aiTOPS:1000, unifiedMem:128, memBW:300, nvlink:600, tdp:170, aiScore:95000, gameScore:15000, price:6999, note:'个人AI工作站', official:true, source:'nvidia', launchPrice:7999, launchDate:'2026-03' },
+    { id:'GB10-PRO', name:'NVIDIA GB10 Pro (DGX Spark Pro)', brand:'nvidia', type:'superchip', cpuCores:20, gpuCores:8192, aiTOPS:1500, unifiedMem:192, memBW:400, nvlink:600, tdp:200, aiScore:120000, gameScore:18000, price:11999, note:'专业AI工作站', official:true, source:'nvidia', launchPrice:12999, launchDate:'2026-06' },
+    { id:'RTX-SPARK', name:'NVIDIA RTX Spark (消费级)', brand:'nvidia', type:'superchip', cpuCores:20, gpuCores:6144, aiTOPS:1000, unifiedMem:128, memBW:300, nvlink:600, tdp:170, aiScore:95000, gameScore:16000, price:4999, note:'消费级AI超级芯片', official:true, source:'nvidia+jd', launchPrice:5999, launchDate:'2026-06' },
+    { id:'RTX-SPARK-LITE', name:'NVIDIA RTX Spark Lite', brand:'nvidia', type:'superchip', cpuCores:20, gpuCores:4096, aiTOPS:700, unifiedMem:64, memBW:250, nvlink:300, tdp:130, aiScore:65000, gameScore:12000, price:3499, note:'入门AI超芯片', official:true, source:'nvidia+jd', launchPrice:3999, launchDate:'2026-06' },
+    // ======= AMD Instinct =======
+    { id:'MI300X', name:'AMD Instinct MI300X', brand:'amd', type:'compute', vram:192, gpuCores:19456, aiTOPS:2600, hbm:'HBM3', memBW:5300, tdp:750, aiScore:110000, price:109999, note:'数据中心AI加速器', official:true, source:'amd', launchPrice:149999, launchDate:'2024-06' },
+    { id:'MI325X', name:'AMD Instinct MI325X', brand:'amd', type:'compute', vram:288, gpuCores:22000, aiTOPS:3200, hbm:'HBM3E', memBW:6000, tdp:750, aiScore:130000, price:89999, note:'下一代AI计算', official:true, source:'amd', launchPrice:129999, launchDate:'2025-10' },
+    { id:'MI400', name:'AMD Instinct MI400', brand:'amd', type:'compute', vram:432, gpuCores:32000, aiTOPS:5000, hbm:'HBM4', memBW:8000, tdp:1000, aiScore:200000, price:179999, note:'旗舰AI 432GB HBM4', official:true, source:'amd', launchPrice:229999, launchDate:'2026-06' },
+    // ======= Apple Silicon =======
+    { id:'M4-MAX-14-32', name:'Apple M4 Max (14核CPU/32核GPU)', brand:'apple', type:'soc', cpuCores:14, cpuPerf:10, cpuEff:4, gpuCores:32, neural:16, unifiedMem:36, memBW:546, aiTOPS:38, aiScore:28000, gameScore:12000, price:16499, note:'Mac Studio入门', official:true, source:'apple+jd', launchPrice:16499, launchDate:'2025-03' },
+    { id:'M4-MAX-16-40', name:'Apple M4 Max (16核CPU/40核GPU)', brand:'apple', type:'soc', cpuCores:16, cpuPerf:12, cpuEff:4, gpuCores:40, neural:16, unifiedMem:128, memBW:546, aiTOPS:44, aiScore:32000, gameScore:13500, price:25999, note:'Mac Studio高配', official:true, source:'apple+jd', launchPrice:25999, launchDate:'2025-03' },
+    { id:'M3-ULTRA-28-60', name:'Apple M3 Ultra (28核CPU/60核GPU)', brand:'apple', type:'soc', cpuCores:28, cpuPerf:20, cpuEff:8, gpuCores:60, neural:32, unifiedMem:96, memBW:800, aiTOPS:52, aiScore:38000, gameScore:16000, price:32999, note:'Mac Studio高端', official:true, source:'apple+jd', launchPrice:32999, launchDate:'2025-03' },
+    { id:'M3-ULTRA-28-80', name:'Apple M3 Ultra (28核CPU/80核GPU)', brand:'apple', type:'soc', cpuCores:28, cpuPerf:20, cpuEff:8, gpuCores:80, neural:32, unifiedMem:192, memBW:800, aiTOPS:60, aiScore:45000, gameScore:18000, price:49999, note:'Mac Studio旗舰', official:true, source:'apple+jd', launchPrice:49999, launchDate:'2025-03' }
+  ]
+};
+
+// ==================== STATE ====================
+
+var state = {
+  scenario: 'gaming',
+  budget: 8000,
+  brandPref: 'all',
+  memPref: 'auto',
+  mbBrand: 'auto',
+  warrantyMode: 'official',
+  weights: { performance: 70, priceRatio: 60, powerEfficiency: 40, upgrade: 30 }
+};
+
+var currentBuild = null;
+var currentAlternatives = [];
+var currentBottleneck = null;
+
+// ==================== SCENARIO CONFIG ====================
+
+var scenarioConfig = {
+  gaming: {
+    label: '游戏方案', note: '优先GPU性能，CPU单核性能',
+    weightCPU: 25, weightGPU: 45, weightRAM: 10, weightStorage: 5, weightOther: 15,
+    ramMinGB: 16, ramPreferGen: 'ddr5', ramPreferFreq: 6000,
+    gpuMinScore: 10000, cpuMinScore: 1800,
+    monitorPrefer: 'high-hz', storageMinGB: 1024,
+    cpuBottleneckRatio: 0.07, gpuBottleneckRatio: 0.05
+  },
+  productivity: {
+    label: '生产力 / 工作站方案', note: '优先CPU多核、RAM容量、ECC支持',
+    weightCPU: 35, weightGPU: 25, weightRAM: 15, weightStorage: 10, weightOther: 15,
+    ramMinGB: 32, ramPreferGen: 'ddr5', ramPreferFreq: 5600,
+    gpuMinScore: 8000, cpuMinScore: 2000,
+    monitorPrefer: 'high-res', storageMinGB: 2048,
+    needECC: true, cpuBottleneckRatio: 0.04, gpuBottleneckRatio: 0.04
+  },
+  ai: {
+    label: 'AI / 深度学习方案', note: '优先GPU VRAM、RAM大容量',
+    weightCPU: 20, weightGPU: 50, weightRAM: 18, weightStorage: 7, weightOther: 5,
+    ramMinGB: 64, ramPreferGen: 'ddr5', ramPreferFreq: 5600,
+    gpuMinScore: 15000, cpuMinScore: 2200,
+    monitorPrefer: 'high-res', storageMinGB: 2048,
+    needECC: true, cpuBottleneckRatio: 0.03, gpuBottleneckRatio: 0.03
+  },
+  office: {
+    label: '日常办公方案', note: '均衡配置，性价比优先',
+    weightCPU: 25, weightGPU: 15, weightRAM: 10, weightStorage: 5, weightOther: 45,
+    ramMinGB: 16, ramPreferGen: 'ddr4', ramPreferFreq: 3200,
+    gpuMinScore: 0, cpuMinScore: 1500,
+    monitorPrefer: 'basic', storageMinGB: 512,
+    cpuBottleneckRatio: 0.03, gpuBottleneckRatio: 0.03
+  },
+  apple: {
+    label: 'Apple 生态方案', note: 'Mac Studio / 统一内存 / 闭环体验',
+    weightCPU: 30, weightGPU: 30, weightRAM: 25, weightStorage: 10, weightOther: 5,
+    ramMinGB: 36, ramPreferGen: 'ddr5', ramPreferFreq: 5400,
+    gpuMinScore: 0, cpuMinScore: 0,
+    monitorPrefer: 'high-res', storageMinGB: 512,
+    cpuBottleneckRatio: 0.05, gpuBottleneckRatio: 0.05
+  }
+};
+
+// ==================== RECOMMENDATION ENGINE ====================
+
+function scoreCPU(cpu, scenario) {
+  if (scenario === 'gaming') return cpu.singleScore * 0.6 + cpu.multiScore * 0.1;
+  if (scenario === 'ai' || scenario === 'productivity') return cpu.multiScore * 0.5 + cpu.singleScore * 0.2;
+  return cpu.singleScore * 0.3 + cpu.multiScore * 0.2;
+}
+
+function scoreGPU(gpu, scenario) {
+  if (scenario === 'gaming') return gpu.gameScore;
+  if (scenario === 'ai') return gpu.aiScore * 0.7 + gpu.vram * 500;
+  if (scenario === 'productivity') return gpu.gameScore * 0.4 + gpu.aiScore * 0.3 + gpu.vram * 200;
+  return gpu.gameScore * 0.3;
+}
+
+// ==================== BOTTLENECK ANALYSIS ====================
+
+function analyzeBottleneck(build, scenario, budget) {
+  var cfg = scenarioConfig[scenario];
+  var cpu = build.parts.cpu;
+  var gpu = build.parts.gpu;
+  var ram = build.parts.ram;
+  var storage = build.parts.storage;
+  var bn = { cpu: null, gpu: null, ram: null, storage: null, overall: 'good' };
+  var scores = [];
+
+  // ---- CPU Bottleneck ----
+  if (gpu) {
+    if (scenario === 'gaming') {
+      var cpuGpuRatio = cpu.singleScore / gpu.gameScore;
+      if (cpuGpuRatio < 0.08) {
+        var severity = Math.round((1 - cpuGpuRatio / 0.08) * 100);
+        var upgradeTargetScore = Math.round(gpu.gameScore * 0.09);
+        // Find upgrade option
+        var upgradeCpu = null;
+        var cpuOpts = DB.cpu.filter(function(c) { return c.singleScore >= upgradeTargetScore && officialFilter(c); });
+        cpuOpts.sort(function(a,b) { return a.price - b.price; });
+        if (cpuOpts.length > 0) upgradeCpu = cpuOpts[0];
+        var upgradeMsg = upgradeCpu ? '可升级至 ' + upgradeCpu.name.split(' ').slice(0,3).join(' ') + ' (+' + (upgradeCpu.price - cpu.price > 0 ? '\u00a5' + (upgradeCpu.price - cpu.price) : '\u00a5' + upgradeCpu.price) + ')' : '升级CPU至单核分 ' + upgradeTargetScore + ' 以上';
+        bn.cpu = { level: severity > 60 ? 'critical' : 'warn', severity: severity,
+          ratio: cpuGpuRatio, detail: 'CPU单核性能(' + cpu.singleScore + ') 相对GPU游戏分(' + gpu.gameScore + ')偏低',
+          fix: upgradeMsg };
+        scores.push(severity);
+      } else {
+        bn.cpu = { level: 'good', severity: 0, detail: 'CPU单核分(' + cpu.singleScore + ') 与游戏分(' + gpu.gameScore + ')匹配良好', fix: '' };
+        scores.push(0);
+      }
+    } else if (scenario === 'productivity' || scenario === 'ai') {
+      var cpuGpuRatio2 = cpu.multiScore / (gpu.aiScore || gpu.gameScore);
+      var threshold = scenario === 'ai' ? 0.5 : 1.0;
+      if (cpuGpuRatio2 < threshold * 0.6) {
+        var severity2 = Math.round((1 - cpuGpuRatio2 / (threshold * 0.6)) * 100);
+        bn.cpu = { level: severity2 > 60 ? 'critical' : 'warn', severity: severity2,
+          detail: 'CPU多核分(' + cpu.multiScore + ') 相对GPU算力偏低',
+          fix: '建议升级CPU至多核分 ' + Math.round((gpu.aiScore || gpu.gameScore) * threshold * 0.7) + ' 以上或增加核心数' };
+        scores.push(severity2);
+      } else {
+        bn.cpu = { level: 'good', severity: 0, detail: 'CPU多核分(' + cpu.multiScore + ') 与GPU算力匹配', fix: '' };
+        scores.push(0);
+      }
+    } else {
+      bn.cpu = { level: 'good', severity: 0, detail: '日常办公CPU足够', fix: '' };
+      scores.push(0);
+    }
+  } else {
+    bn.cpu = { level: 'good', severity: 0, detail: '未选配GPU', fix: '' };
+    scores.push(0);
+  }
+
+  // ---- GPU Bottleneck (only for gaming/ai) ----
+  if (gpu && cpu) {
+    if (scenario === 'gaming') {
+      var gpuAtRes = gpu.gameScore;
+      var resScale = 1.0;
+      if (build.parts.monitor) {
+        if (build.parts.monitor.id === 'MON-4K' || build.parts.monitor.id === 'MON-4K-P' || build.parts.monitor.id === 'MON-4K-H') resScale = 0.6;
+        else if (build.parts.monitor.id === 'MON-2K' || build.parts.monitor.id === 'MON-2K-H') resScale = 0.8;
+      }
+      var effectiveGPU = gpu.gameScore * resScale;
+      var needed = cpu.singleScore * 5;
+      if (effectiveGPU < needed * 0.8) {
+        var gpuSev = Math.round((1 - effectiveGPU / needed) * 100);
+        // Find GPU upgrade
+        var upgradeGpu = null;
+        var gpuOpts = DB.gpu.filter(function(g) { return g.gameScore >= gpu.gameScore * 1.3 && officialFilter(g); });
+        gpuOpts.sort(function(a,b) { return a.price - b.price; });
+        if (gpuOpts.length > 0) upgradeGpu = gpuOpts[0];
+        var gpuUpgradeMsg = upgradeGpu ? '可升级至 ' + upgradeGpu.name.split(' ').slice(0,3).join(' ') + ' (+' + (upgradeGpu.price - gpu.price > 0 ? '\u00a5' + (upgradeGpu.price - gpu.price) : '\u00a5' + upgradeGpu.price) + ')' : '升级GPU';
+        bn.gpu = { level: gpuSev > 50 ? 'critical' : 'warn', severity: gpuSev,
+          detail: 'GPU性能(' + gpu.gameScore + ') 在目标分辨率下可能成为瓶颈',
+          fix: gpuUpgradeMsg };
+        scores.push(gpuSev);
+      } else {
+        bn.gpu = { level: 'good', severity: 0, detail: 'GPU性能足够带动CPU和分辨率', fix: '' };
+        scores.push(0);
+      }
+    } else if (scenario === 'ai') {
+      var vramNeeded = cpu.cores > 12 ? 24 : (cpu.cores > 8 ? 16 : 12);
+      if (gpu.vram < vramNeeded) {
+        var vramSev = Math.round((1 - gpu.vram / vramNeeded) * 100);
+        bn.gpu = { level: vramSev > 50 ? 'critical' : 'warn', severity: vramSev,
+          detail: 'GPU显存(' + gpu.vram + 'GB) 不够满足AI工作负载需求(建议' + vramNeeded + 'GB+)',
+          fix: '选择更大显存的GPU (RTX 4090 24GB / RTX 4080S 16GB)' };
+        scores.push(vramSev);
+      } else {
+        bn.gpu = { level: 'good', severity: 0, detail: 'GPU显存(' + gpu.vram + 'GB) 足够AI负载', fix: '' };
+        scores.push(0);
+      }
+    } else {
+      bn.gpu = { level: 'good', severity: 0, detail: 'GPU无瓶颈', fix: '' };
+      scores.push(0);
+    }
+  } else {
+    bn.gpu = { level: 'good', severity: 0, detail: 'GPU未选配或无瓶颈', fix: '' };
+    scores.push(0);
+  }
+
+  // ---- RAM Bottleneck ----
+  var ramConfig = scenarioConfig[scenario];
+  var idealRAM = ramConfig.ramMinGB || 16;
+  if (scenario === 'ai') idealRAM = Math.max(64, cpu.cores > 12 ? 128 : 64);
+  if (scenario === 'productivity') idealRAM = Math.max(32, cpu.cores > 16 ? 64 : 32);
+
+  if (ram.capacity < idealRAM) {
+    var ramSev = Math.round((1 - ram.capacity / idealRAM) * 100);
+    var ramNote = 'RAM容量不足';
+    if (scenario === 'workstation' || scenario === 'productivity') ramNote += '，工作站建议ECC';
+    // Find RAM upgrade with price
+    var upgRam = null;
+    var ramOpts = DB.ram.filter(function(r) { return r.capacity >= idealRAM && r.gen === ram.gen && (scenarioConfig[scenario].needECC ? r.ecc : true); });
+    ramOpts.sort(function(a,b) { return a.price - b.price; });
+    if (ramOpts.length > 0) upgRam = ramOpts[0];
+    var ramFix = upgRam ? '升级至 ' + upgRam.name + ' (+' + (upgRam.price - ram.price > 0 ? '\u00a5' + (upgRam.price - ram.price) : '\u00a5' + upgRam.price) + ')' : '升级至 ' + idealRAM + 'GB';
+    bn.ram = { level: ramSev > 50 ? 'critical' : 'warn', severity: ramSev,
+      detail: ram.capacity + 'GB < 建议' + idealRAM + 'GB (' + ramNote + ')',
+      fix: ramFix };
+    scores.push(ramSev);
+  } else if (scenarioConfig[scenario].needECC && !ram.ecc) {
+    bn.ram = { level: 'warn', severity: 20, detail: ram.capacity + 'GB 非ECC内存，工作站建议ECC以保障数据完整性',
+      fix: '建议更换为ECC内存 + 支持ECC的主板' };
+    scores.push(20);
+  } else if (ram.freq < (scenarioConfig[scenario].ramPreferFreq || 3200)) {
+    bn.ram = { level: 'warn', severity: 15, detail: 'RAM频率(' + ram.freq + 'MHz) 略低于最佳(' + scenarioConfig[scenario].ramPreferFreq + 'MHz)',
+      fix: '可选更高频率内存提升性能' };
+    scores.push(15);
+  } else {
+    bn.ram = { level: 'good', severity: 0, detail: ram.capacity + 'GB ' + ram.freq + 'MHz ' + (ram.ecc ? 'ECC ' : '') + '内存充足', fix: '' };
+    scores.push(0);
+  }
+
+  // ---- Storage Bottleneck ----
+  var idealStorage = ramConfig.storageMinGB || 1024;
+  if (scenario === 'productivity' || scenario === 'ai') idealStorage = Math.max(2048, cpu.cores > 16 ? 4096 : 2048);
+  if (storage.capacity < idealStorage) {
+    var storSev = Math.round((1 - storage.capacity / idealStorage) * 100);
+    bn.storage = { level: storSev > 50 ? 'critical' : 'warn', severity: storSev,
+      detail: '存储(' + storage.capacity + 'GB) < 建议' + idealStorage + 'GB',
+      fix: '建议升级存储至 ' + idealStorage + 'GB 以上' };
+    scores.push(storSev);
+  } else {
+    bn.storage = { level: 'good', severity: 0, detail: '存储容量(' + storage.capacity + 'GB) 充足', fix: '' };
+    scores.push(0);
+  }
+
+  // ---- Overall ----
+  var maxScore = Math.max.apply(null, scores);
+  if (maxScore >= 50) bn.overall = 'critical';
+  else if (maxScore >= 20) bn.overall = 'warn';
+  else bn.overall = 'good';
+
+  return bn;
+}
+
+// ==================== BOTTLENECK-AWARE RECOMMENDATION ====================
+
+function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
+  var cfg = scenarioConfig[scenario];
+  var build = { parts: {}, totalPrice: 0, totalTDP: 0, performanceScore: 0, summary: {} };
+  var usedBudget = 0;
+  var wantECC = cfg.needECC || (memPref === 'ecc');
+  var ddrOverride = memPref !== 'auto' && memPref !== 'ecc' ? memPref : null;
+  // Warranty mode filter: when 'official', only include products available at official/self-operated stores
+  var onlyOfficial = state.warrantyMode === 'official';
+  function officialFilter(item) { return !onlyOfficial || item.official !== false; }
+
+  // ======= APPLE ECOSYSTEM =======
+  if (scenario === 'apple') {
+    var applePool = DB.compute.filter(function(a) { return a.brand === 'apple' && officialFilter(a); });
+    applePool.sort(function(a, b) { return b.aiScore - a.aiScore; });
+    var apple = null;
+    for (var ai = 0; ai < applePool.length; ai++) {
+      if (applePool[ai].price <= budget) { apple = applePool[ai]; break; }
+    }
+    if (!apple) apple = applePool[applePool.length - 1] || applePool[0];
+    build.parts.cpu = { name: apple.name + ' SoC', cores: apple.cpuCores, threads: apple.cpuCores, boost: apple.memBW+'GB/s', tdp: 0, singleScore: Math.round(apple.aiScore/1000), multiScore: Math.round(apple.aiScore/500), price: 0, note: 'Apple ' + (apple.gpuCores||0) + '核GPU ' + apple.unifiedMem + 'GB统一内存' };
+    build.parts.gpu = { name: '集成于SoC', vram: apple.unifiedMem, cuda: (apple.gpuCores||0)*64, tdp: 0, gameScore: apple.gameScore||10000, aiScore: apple.aiScore, price: 0, note: apple.unifiedMem + 'GB统一内存 ' + apple.memBW + 'GB/s带宽' };
+    build.parts.mb = { name: 'Apple 统一主板 (集成)', price: 0, note: '封闭生态不可更换' };
+    build.parts.ram = { name: '统一内存 '+apple.unifiedMem+'GB', capacity: apple.unifiedMem, gen: 'ddr5', freq: Math.round(apple.memBW/1024), ecc: false, price: 0, note: '统一内存架构' };
+    build.parts.storage = { name: 'Apple SSD (集成)', capacity: 1024, price: 0, note: '标配1TB起' };
+    build.parts.cooler = { name: 'Apple 被动散热', price: 0, note: '无风扇方案' };
+    build.parts.psu = { name: '内置电源', wattage: 300, price: 0, note: '集成' };
+    build.parts.case = { name: 'Mac Studio 机箱', price: 0, note: 'Apple设计' };
+    build.parts.monitor = null; build.parts.peripheral = null;
+    usedBudget = apple.price;
+    build.totalPrice = usedBudget;
+    build.totalTDP = 170;
+    var perfScore = Math.round(Math.min(100, apple.aiScore / 1200 + apple.unifiedMem / 4));
+    build.performanceScore = Math.min(100, perfScore);
+    build.pricePerformance = usedBudget > 0 ? Math.round(build.performanceScore * 1000 / usedBudget * 10) / 10 : 0;
+    build.summary = {
+      totalPrice: usedBudget, remaining: budget - usedBudget, performanceScore: build.performanceScore,
+      pricePerformance: build.pricePerformance, totalTDP: 170,
+      gpuVRAM: apple.unifiedMem, cpuCores: apple.cpuCores,
+      ramCapacity: apple.unifiedMem, storageCapacity: 1024,
+      cpuModel: apple.name, gpuModel: apple.name + ' GPU',
+      ramModel: apple.unifiedMem + 'GB 统一内存', ramECC: false, ramFreq: Math.round(apple.memBW/1024), ramGen: '统一'
+    };
+    return build;
+  }
+  // ======= END APPLE =======
+
+  // ---- CPU ----
+  var cpuPool = DB.cpu.filter(function(c) {
+    if (brandPref === 'intel-nvidia' && c.brand !== 'intel') return false;
+    if (brandPref === 'amd' && c.brand !== 'amd') return false;
+    if (!officialFilter(c)) return false;
+    return true;
+  });
+  cpuPool.sort(function(a, b) { return scoreCPU(b, scenario) - scoreCPU(a, scenario); });
+  var cpu = null;
+  for (var i = 0; i < cpuPool.length; i++) {
+    var maxCpuPrice = budget * 0.25;
+    if (cpuPool[i].price <= maxCpuPrice) { cpu = cpuPool[i]; break; }
+  }
+  if (!cpu) cpu = cpuPool[cpuPool.length - 1];
+  build.parts.cpu = cpu;
+  usedBudget += cpu.price;
+
+  var socket = cpu.socket;
+  var isAMD = cpu.brand === 'amd';
+  var ddrGen = null;
+  if (wantECC) {
+    ddrGen = 'ddr5'; // ECC only on DDR5
+  } else if (ddrOverride) {
+    ddrGen = ddrOverride;
+  } else {
+    ddrGen = isAMD || (scenario !== 'office' && budget > 6000) ? 'ddr5' : 'ddr4';
+  }
+
+  // ---- MB (ECC-aware) ----
+  var mbPool = DB.mb.filter(function(m) {
+    if (m.socket !== socket) return false;
+    if (wantECC && !m.ecc) return false;
+    if (m.ddr !== ddrGen) return false;
+    if (!officialFilter(m)) return false;
+    // MB brand filter
+    if (state.mbBrand !== 'auto' && m.brand !== state.mbBrand) return false;
+    return true;
+  });
+  if (mbPool.length === 0) {
+    // Fallback: ignore ECC and brand requirements
+    mbPool = DB.mb.filter(function(m) { return m.socket === socket && m.ddr === ddrGen && officialFilter(m); });
+  }
+  mbPool.sort(function(a, b) { return a.price - b.price; });
+  var mb = mbPool[0];
+  if (mb) {
+    var mbBudget2 = scenario === 'office' ? budget * 0.08 : budget * 0.12;
+    for (var mi = 0; mi < mbPool.length; mi++) {
+      if (mbPool[mi].price <= mbBudget2) mb = mbPool[mi];
+      else break;
+    }
+  } else {
+    mb = { id:'none', name:'无匹配主板 (请调整品牌/内存选择)', price:0, note:'不兼容' };
+  }
+  build.parts.mb = mb;
+  usedBudget += mb.price;
+
+  // ---- GPU ----
+  var gpuPool = DB.gpu.filter(function(g) {
+    if (brandPref === 'intel-nvidia' && g.brand !== 'nvidia') return false;
+    if (brandPref === 'amd' && g.brand !== 'amd') return false;
+    if (brandPref === 'intel-amd' && g.brand !== 'amd') return false;
+    if (!officialFilter(g)) return false;
+    return true;
+  });
+  gpuPool.sort(function(a, b) { return scoreGPU(b, scenario) - scoreGPU(a, scenario); });
+  var gpu = null;
+  var remaining = budget - usedBudget;
+  var maxGpuPrice = remaining * 0.7;
+  for (var gi = 0; gi < gpuPool.length; gi++) {
+    if (gpuPool[gi].price <= maxGpuPrice && (scenario === 'office' || gpuPool[gi].gameScore >= (cfg.gpuMinScore || 0))) {
+      gpu = gpuPool[gi];
+      break;
+    }
+  }
+  if (!gpu) gpu = gpuPool[gpuPool.length - 1];
+  if (scenario === 'ai' && gpu && gpu.vram < 12) {
+    for (var gi2 = 0; gi2 < gpuPool.length; gi2++) {
+      if (gpuPool[gi2].vram >= 12 && gpuPool[gi2].price <= maxGpuPrice * 1.2) { gpu = gpuPool[gi2]; break; }
+    }
+  }
+  build.parts.gpu = gpu;
+  usedBudget += gpu.price;
+
+  // ---- RAM (ECC-aware) ----
+  remaining = budget - usedBudget;
+  var ramPool = DB.ram.filter(function(r) {
+    if (r.gen !== ddrGen) return false;
+    if (wantECC && !r.ecc) return false;
+    if (!officialFilter(r)) return false;
+    return true;
+  });
+  var targetRAM = Math.max(cfg.ramMinGB || 16, scenario === 'ai' ? 64 : (scenario === 'productivity' ? 32 : 16));
+  if (wantECC && targetRAM < 32) targetRAM = 32; // ECC minimum
+  ramPool.sort(function(a, b) {
+    var aFit = Math.abs(a.capacity - targetRAM);
+    var bFit = Math.abs(b.capacity - targetRAM);
+    if (aFit !== bFit) return aFit - bFit;
+    // Prefer higher freq within same capacity
+    if (aFit === bFit && a.capacity === b.capacity && a.freq !== b.freq) return b.freq - a.freq;
+    return a.price - b.price;
+  });
+  var ram = ramPool[0] || DB.ram[0];
+  if (ram.price > remaining * 0.5) {
+    ramPool.sort(function(a, b) { return a.price - b.price; });
+    ram = ramPool[0] || DB.ram[0];
+  }
+  for (var ri = 0; ri < ramPool.length; ri++) {
+    if (ramPool[ri].capacity >= targetRAM && ramPool[ri].price <= remaining * 0.4) { ram = ramPool[ri]; break; }
+  }
+  build.parts.ram = ram;
+  usedBudget += ram.price;
+
+  // ---- Storage ----
+  remaining = budget - usedBudget;
+  var storagePool = DB.storage.slice().filter(officialFilter);
+  var targetStorage = cfg.storageMinGB || 1024;
+  if (targetStorage > 2048) targetStorage = Math.min(4096, Math.max(2048, targetStorage));
+  storagePool.sort(function(a, b) {
+    var aFit = Math.abs(a.capacity - targetStorage);
+    var bFit = Math.abs(b.capacity - targetStorage);
+    if (aFit !== bFit) return aFit - bFit;
+    return a.price - b.price;
+  });
+  var storage = storagePool[0];
+  if (storage.price > remaining * 0.3) {
+    storagePool.sort(function(a, b) { return a.price - b.price; });
+    storage = storagePool[0];
+  }
+  build.parts.storage = storage;
+  usedBudget += storage.price;
+
+  // ---- Cooler ----
+  var coolerPool = DB.cooler.slice().filter(officialFilter);
+  if (cpu.tdp >= 200) {
+    if (budget > 10000 && cpu.tdp >= 250) {
+      build.parts.cooler = coolerPool.find(function(c) { return c.type === 'aio' && c.id.includes('360'); }) || coolerPool[coolerPool.length - 1];
+    } else if (cpu.tdp >= 150) {
+      build.parts.cooler = coolerPool.find(function(c) { return c.id === 'AIO-240'; }) || coolerPool.find(function(c) { return c.id === 'AIR-M'; }) || coolerPool[1];
+    } else {
+      build.parts.cooler = coolerPool.find(function(c) { return c.id === 'AIR-M'; }) || coolerPool[1];
+    }
+  } else if (cpu.tdp >= 100) {
+    build.parts.cooler = coolerPool[1];
+  } else {
+    build.parts.cooler = coolerPool[0];
+  }
+  usedBudget += build.parts.cooler.price;
+
+  // Check cooling bottleneck
+  if (build.parts.cooler.tdpCapable < cpu.tdp) {
+    // Upgrade cooler
+    for (var cli = 0; cli < coolerPool.length; cli++) {
+      if (coolerPool[cli].tdpCapable >= cpu.tdp && coolerPool[cli].price <= (budget - usedBudget + coolerPool[cli].price) * 0.5) {
+        build.parts.cooler = coolerPool[cli]; break;
+      }
+    }
+  }
+
+  // ---- PSU ----
+  var totalTDP = (cpu.tdp || 0) + (gpu.tdp || 0) + 50;
+  var psuPool = DB.psu.slice().filter(officialFilter);
+  var neededWatt = totalTDP * 1.4;
+  psuPool.sort(function(a, b) {
+    var aFit = Math.abs(a.wattage - neededWatt);
+    var bFit = Math.abs(b.wattage - neededWatt);
+    if (aFit !== bFit) return aFit - bFit;
+    return a.price - b.price;
+  });
+  var psu = psuPool[0];
+  for (var pi = 0; pi < psuPool.length; pi++) {
+    if (psuPool[pi].wattage >= neededWatt && psuPool[pi].price <= (budget - usedBudget + psuPool[pi].price) * 0.5) {
+      psu = psuPool[pi]; break;
+    }
+  }
+  build.parts.psu = psu;
+  usedBudget += psu.price;
+  build.totalTDP = totalTDP;
+
+  // ---- Case ----
+  remaining = budget - usedBudget;
+  var casePool = DB.case.slice().filter(officialFilter);
+  var case_ = casePool[0];
+  var caseBudget2 = scenario === 'office' ? 200 : (budget > 15000 ? 600 : 400);
+  for (var ci = 0; ci < casePool.length; ci++) {
+    if (casePool[ci].price <= caseBudget2) case_ = casePool[ci];
+    else break;
+  }
+  build.parts.case = case_;
+  usedBudget += case_.price;
+
+  // ---- Monitor ----
+  remaining = budget - usedBudget;
+  var monitorPool = DB.monitor.slice().filter(officialFilter);
+  var monitor = null;
+  if (scenario === 'gaming') {
+    if (budget > 15000) monitor = monitorPool.find(function(m) { return m.id === 'MON-2K-H'; }) || monitorPool[2];
+    else if (budget > 8000) monitor = monitorPool.find(function(m) { return m.id === 'MON-2K'; }) || monitorPool[1];
+    else monitor = monitorPool.find(function(m) { return m.id === 'MON-1080'; }) || monitorPool[0];
+  } else if (scenario === 'office') {
+    monitor = monitorPool.find(function(m) { return m.id === 'MON-BASIC'; }) || monitorPool[6];
+  } else {
+    if (budget > 15000) monitor = monitorPool.find(function(m) { return m.id === 'MON-4K-H'; }) || monitorPool[5];
+    else if (budget > 8000) monitor = monitorPool.find(function(m) { return m.id === 'MON-4K-P'; }) || monitorPool[4];
+    else monitor = monitorPool.find(function(m) { return m.id === 'MON-1080'; }) || monitorPool[0];
+  }
+  if (monitor && monitor.price > remaining) {
+    monitorPool.sort(function(a, b) { return a.price - b.price; });
+    if (scenario === 'gaming') monitor = monitorPool.find(function(m) { return m.id === 'MON-1080'; }) || monitorPool[0];
+    else monitor = monitorPool[0];
+  }
+  if (monitor) { build.parts.monitor = monitor; usedBudget += monitor.price; }
+
+  // ---- Peripherals ----
+  remaining = budget - usedBudget;
+  var kbPool = DB.peripheral.slice().filter(officialFilter);
+  if (scenario === 'gaming') {
+    build.parts.peripheral = budget > 10000 ? kbPool[2] : kbPool[1];
+  } else if (scenario === 'ai') {
+    build.parts.peripheral = kbPool[1];
+  } else {
+    build.parts.peripheral = kbPool[0];
+  }
+  if (build.parts.peripheral.price > remaining) build.parts.peripheral = kbPool[0];
+  usedBudget += build.parts.peripheral.price;
+
+  // ---- Performance Score ----
+  var perfScore = 0;
+  if (scenario === 'gaming') {
+    perfScore = (gpu.gameScore / 350) * 50 + (cpu.singleScore / 28) * 25 + (ram.freq / 60) * 15 + (storage.capacity / 200) * 10;
+  } else if (scenario === 'ai') {
+    perfScore = (gpu.aiScore / 620) * 50 + (gpu.vram / 24) * 20 + (cpu.multiScore / 420) * 15 + (ram.capacity / 128) * 15;
+  } else if (scenario === 'productivity') {
+    perfScore = (cpu.multiScore / 420) * 35 + (gpu.aiScore / 620) * 30 + (ram.capacity / 128) * 20 + (storage.capacity / 200) * 15;
+  } else {
+    perfScore = (cpu.singleScore / 28) * 30 + (cpu.multiScore / 420) * 20 + (storage.capacity / 200) * 15 + (ram.capacity / 16) * 15 + 20;
+  }
+  perfScore = Math.round(Math.min(100, perfScore));
+
+  var pricePerf = usedBudget > 0 ? Math.round(perfScore * 1000 / usedBudget * 10) / 10 : 0;
+
+  build.totalPrice = usedBudget;
+  build.performanceScore = perfScore;
+  build.pricePerformance = pricePerf;
+
+  build.summary = {
+    totalPrice: usedBudget,
+    remaining: budget - usedBudget,
+    performanceScore: perfScore,
+    pricePerformance: pricePerf,
+    totalTDP: totalTDP,
+    gpuVRAM: gpu.vram || 0,
+    cpuCores: cpu.cores,
+    ramCapacity: ram.capacity,
+    storageCapacity: storage.capacity,
+    cpuModel: cpu.name,
+    gpuModel: gpu.name,
+    ramModel: ram.name,
+    ramECC: !!ram.ecc,
+    ramFreq: ram.freq,
+    ramGen: ram.gen
+  };
+
+  return build;
+}
+
+// ==================== BOTTLENECK-AWARE ALTERNATIVES ====================
+
+function findAlternativesWithFix(build, scenario, budget, brandPref, memPref, weights) {
+  var alts = [];
+  var attempts = [budget * 0.7, budget * 0.85, budget * 1.0, budget * 1.15, budget * 1.3, budget];
+  attempts.forEach(function(ab) {
+    ab = Math.min(Math.max(Math.round(ab), 3000), 50000);
+    var alt = buildRecommendation(scenario, ab, brandPref, memPref, weights);
+    var same = alt.totalPrice === build.totalPrice &&
+      alt.parts.cpu.id === build.parts.cpu.id &&
+      alt.parts.gpu.id === build.parts.gpu.id;
+    if (!same && alt.totalPrice > 0) alts.push(alt);
+  });
+  alts.sort(function(a, b) { return a.totalPrice - b.totalPrice; });
+  return alts.slice(0, 5);
+}
+
+// ==================== UI RENDERING ====================
+
+function selectScenario(s) {
+  state.scenario = s;
+  document.querySelectorAll('.scenario-card').forEach(function(el) {
+    el.classList.toggle('active', el.dataset.scenario === s);
+  });
+  rebuild();
+}
+
+function syncBudget(source) {
+  var slider = document.getElementById('budgetSlider');
+  var input = document.getElementById('budgetInput');
+  var display = document.getElementById('budgetDisplay');
+  var v;
+  if (source === 'slider') {
+    v = parseInt(slider.value);
+    input.value = v;
+  } else {
+    v = parseInt(input.value) || 3000;
+    if (v < 1000) v = 1000;
+    // Dynamically extend slider range
+    var max = parseInt(slider.max);
+    if (v > max) {
+      slider.max = Math.ceil(v / 1000) * 1000;
+    }
+    slider.value = Math.min(v, parseInt(slider.max));
+  }
+  state.budget = v;
+  display.textContent = '\u00a5' + v.toLocaleString();
+  // Update preset button styles
+  document.querySelectorAll('.budget-preset').forEach(function(b) {
+    var bv = parseInt(b.textContent.replace(/[^\d]/g,'')) * 1000;
+    b.classList.toggle('active', bv === v);
+  });
+  // Update tier label
+  var tier = '';
+  if (v <= 3000) tier = '入门级';
+  else if (v <= 5000) tier = '经济型';
+  else if (v <= 8000) tier = '主流型';
+  else if (v <= 10000) tier = '中高端';
+  else if (v <= 15000) tier = '高性能';
+  else if (v <= 20000) tier = '旗舰级';
+  else if (v <= 30000) tier = '发烧级';
+  else tier = '顶级定制';
+  document.getElementById('budgetTier').textContent = tier;
+  rebuild();
+}
+
+function setBudget(v) {
+  state.budget = v;
+  document.getElementById('budgetSlider').value = v;
+  document.getElementById('budgetInput').value = v;
+  syncBudget('slider');
+}
+
+function updateBudget() { syncBudget('slider'); }
+
+function setWarrantyMode(mode) {
+  state.warrantyMode = mode;
+  document.querySelectorAll('#warrantyToggle .mode-btn').forEach(function(el) {
+    el.classList.toggle('active', el.dataset.mode === mode);
+  });
+  rebuild();
+}
+
+function rebuild() {
+  state.brandPref = document.getElementById('brandPref').value;
+  state.memPref = document.getElementById('memPref').value;
+  state.mbBrand = document.getElementById('mbBrand').value;
+  var sc = state.scenario;
+  var build = buildRecommendation(sc, state.budget, state.brandPref, state.memPref, state.weights);
+  currentBuild = build;
+  currentBottleneck = analyzeBottleneck(build, sc, state.budget);
+  currentAlternatives = findAlternativesWithFix(build, sc, state.budget, state.brandPref, state.memPref, state.weights);
+  renderWeights();
+  renderBottleneck(currentBottleneck);
+  renderSummary(build);
+  renderBuildTable(build);
+  renderAllComponents();
+  renderAlternatives(currentAlternatives);
+  populatePriceSelector();
+}
+
+function renderWeights() {
+  var keys = ['performance', 'priceRatio', 'powerEfficiency', 'upgrade'];
+  var labels = ['性能', '性价比', '能效', '可升级性'];
+  var panel = document.getElementById('weightPanel');
+  var html = '';
+  for (var i = 0; i < keys.length; i++) {
+    html += '<div class="weight-row"><label>' + labels[i] + '</label>';
+    html += '<input type="range" min="0" max="100" step="5" value="' + state.weights[keys[i]] + '" oninput="updateWeight(\'' + keys[i] + '\', this.value)">';
+    html += '<span class="wval">' + state.weights[keys[i]] + '</span></div>';
+  }
+  panel.innerHTML = html;
+}
+
+function updateWeight(key, val) {
+  state.weights[key] = parseInt(val);
+  rebuild();
+}
+
+// ---- Bottleneck Render ----
+function renderBottleneck(bn) {
+  var overallText = { good: '无瓶颈, 配置均衡', warn: '轻度瓶颈, 建议优化', critical: '存在严重瓶颈, 建议升级' }[bn.overall] || '正常';
+  document.getElementById('bnOverall').innerHTML = '总体: <strong style="color:' + ({ good:'#34c759', warn:'#ff9500', critical:'#ff3b30' }[bn.overall]) + '">' + overallText + '</strong>';
+
+  var items = [
+    { key: 'cpu', label: 'CPU 瓶颈' },
+    { key: 'gpu', label: 'GPU 瓶颈' },
+    { key: 'ram', label: '内存 瓶颈' },
+    { key: 'storage', label: '存储 瓶颈' }
+  ];
+
+  var html = '';
+  items.forEach(function(item) {
+    var data = bn[item.key];
+    if (!data) return;
+    var levelText = { good: '正常', warn: '轻度', critical: '严重' }[data.level] || '正常';
+    var icon = data.level === 'good' ? '&#10004;' : (data.level === 'warn' ? '&#9888;' : '&#10060;');
+    html += '<div class="bn-card ' + data.level + '">';
+    html += '<div class="bn-title">' + icon + ' ' + item.label + '</div>';
+    html += '<div class="bn-value ' + data.level + '">' + levelText + '</div>';
+    html += '<div class="bn-detail">' + data.detail + '</div>';
+    // Show upgrade options
+    var upgradeOptions = findUpgradeOptions(item.key, data);
+    if (upgradeOptions && upgradeOptions.length > 0) {
+      html += '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">';
+      upgradeOptions.forEach(function(opt, oi) {
+        var isBest = oi === 0;
+        var borderColor = isBest ? '#c0392b' : '#d2d2d7';
+        var bgColor = isBest ? '#fef0ef' : '#fff';
+        html += '<div style="flex:1;min-width:100px;padding:6px 10px;border:0.5px solid ' + borderColor + ';border-radius:6px;background:' + bgColor + ';cursor:pointer;font-size:11px;" onclick="alert(\'\u5df2\u9009\u62e9: ' + opt.name.replace(/'/g,"\\'") + ' \u00a5' + opt.price.toLocaleString() + '\')" title="\u70b9\u51fb\u67e5\u770b\u8be6\u60c5">';
+        html += '<div style="font-weight:500;color:#1d1d1f;">' + opt.name.split(' ').slice(0,3).join(' ') + '</div>';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px;">';
+        html += '<span style="font-weight:700;color:' + (isBest ? '#c0392b' : '#0071e3') + ';">\u00a5' + opt.price.toLocaleString() + '</span>';
+        if (opt.diff !== undefined) {
+          var diffColor = opt.diff > 0 ? '#c0392b' : '#3b6d11';
+          html += '<span style="font-size:10px;color:' + diffColor + ';">+' + opt.diff.toLocaleString() + '</span>';
+        }
+        if (isBest) html += '<span style="font-size:9px;background:#c0392b;color:#fff;padding:1px 5px;border-radius:3px;">\u63a8\u8350</span>';
+        html += '</div></div>';
+      });
+      html += '</div>';
+    }
+    if (data.fix && !upgradeOptions) html += '<div class="bn-fix">&#128161; ' + data.fix + '</div>';
+    html += '</div>';
+  });
+  document.getElementById('bnGrid').innerHTML = html;
+}
+
+// Find upgrade hardware options for a given bottleneck type
+function findUpgradeOptions(key, data) {
+  var onlyOff = state.warrantyMode === 'official';
+  function offFilt(i) { return !onlyOff || i.official !== false; }
+  var currentParts = currentBuild ? currentBuild.parts : null;
+  var opts = [];
+  
+  if (key === 'cpu' && currentParts && currentParts.cpu) {
+    var cur = currentParts.cpu;
+    var pool = DB.cpu.filter(function(c) {
+      if (!offFilt(c)) return false;
+      if (state.brandPref === 'intel-nvidia' && c.brand !== 'intel') return false;
+      if (state.brandPref === 'amd' && c.brand !== 'amd') return false;
+      if (state.brandPref === 'intel-amd' && c.brand !== 'amd') return false;
+      return true;
+    });
+    pool.sort(function(a,b) { return scoreCPU(b, state.scenario) - scoreCPU(a, state.scenario); });
+    for (var i = 0; i < pool.length && opts.length < 3; i++) {
+      if (pool[i].id !== cur.id && pool[i].price > cur.price) {
+        var p = pool[i];
+        opts.push({ name: p.name, price: p.price, diff: p.price - cur.price, id: p.id });
+      }
+    }
+  }
+  
+  if (key === 'gpu' && currentParts && currentParts.gpu) {
+    var cur = currentParts.gpu;
+    var pool = DB.gpu.filter(function(g) {
+      if (!offFilt(g)) return false;
+      if (state.brandPref === 'intel-nvidia' && g.brand !== 'nvidia') return false;
+      if (state.brandPref === 'amd' && g.brand !== 'amd') return false;
+      if (state.brandPref === 'intel-amd' && g.brand !== 'amd') return false;
+      return true;
+    });
+    pool.sort(function(a,b) { return scoreGPU(b, state.scenario) - scoreGPU(a, state.scenario); });
+    for (var i = 0; i < pool.length && opts.length < 3; i++) {
+      if (pool[i].id !== cur.id && pool[i].price > cur.price) {
+        var p = pool[i];
+        opts.push({ name: p.name, price: p.price, diff: p.price - cur.price, id: p.id });
+      }
+    }
+  }
+  
+  if (key === 'ram' && currentParts && currentParts.ram) {
+    var cur = currentParts.ram;
+    // Suggest larger capacity/faster frequency RAM
+    var pool = DB.ram.filter(function(r) { return offFilt(r) && r.gen === cur.gen; });
+    pool.sort(function(a,b) { return (b.capacity * b.freq) - (a.capacity * a.freq); });
+    for (var i = 0; i < pool.length && opts.length < 3; i++) {
+      if (pool[i].id !== cur.id && pool[i].capacity >= cur.capacity && pool[i].price > cur.price) {
+        var p = pool[i];
+        opts.push({ name: p.name, price: p.price, diff: p.price - cur.price, id: p.id });
+      }
+    }
+  }
+  
+  if (key === 'storage' && currentParts && currentParts.storage) {
+    var cur = currentParts.storage;
+    var pool = DB.storage.filter(function(s) { return offFilt(s) && s.capacity > cur.capacity; });
+    pool.sort(function(a,b) { return a.capacity - b.capacity; });
+    for (var i = 0; i < pool.length && opts.length < 3; i++) {
+      var p = pool[i];
+      opts.push({ name: p.name, price: p.price, diff: p.price - cur.price, id: p.id });
+    }
+  }
+  
+  return opts.length > 0 ? opts : null;
+}
+
+// ---- Summary ----
+function renderSummary(build) {
+  var s = build.summary;
+  var cfg = scenarioConfig[state.scenario];
+  document.getElementById('scenarioLabel').textContent = cfg.label + ' | ' + cfg.note;
+  document.getElementById('spentDisplay').textContent = '\u00a5' + s.totalPrice.toLocaleString();
+  document.getElementById('remainDisplay').textContent = '\u9884\u7b97: \u00a5' + state.budget.toLocaleString();
+  var pct = Math.min(100, Math.round(s.totalPrice / state.budget * 100));
+  document.getElementById('budgetFill').style.width = pct + '%';
+  if (pct > 100) document.getElementById('budgetFill').style.background = '#ff3b30';
+  else document.getElementById('budgetFill').style.background = '#0071e3';
+
+  var perfGrade = s.performanceScore >= 80 ? 'green' : (s.performanceScore >= 60 ? 'blue' : (s.performanceScore >= 40 ? 'orange' : 'red'));
+  var ramExtra = s.ramECC ? ' ECC' : '';
+  var ramLabel = s.ramGen.toUpperCase() + ' ' + s.ramFreq + 'MHz' + ramExtra;
+
+  var cards = '';
+  var metrics = [
+    { label: '综合性能评分', value: s.performanceScore + '/100', cls: perfGrade },
+    { label: '总价', value: '\u00a5' + s.totalPrice.toLocaleString(), cls: 'blue' },
+    { label: '性价比指数', value: s.pricePerformance, unit: '分/千元', cls: 'green' },
+    { label: '预算等级', value: budgetTierLabel(state.budget), cls: state.budget >= 15000 ? 'orange' : (state.budget >= 8000 ? 'green' : ''), unit: '\u00a5每千元得' + (state.budget > 0 ? Math.round(s.performanceScore * 1000 / state.budget) + '分' : '') },
+    { label: '整机功耗', value: s.totalTDP + 'W', cls: 'orange' },
+    { label: 'CPU', value: s.cpuModel.split(' ').slice(0,2).join(' '), cls: 'blue', unit: s.cpuCores + '核' },
+    { label: '显卡', value: s.gpuModel.split(' ').slice(0,2).join(' '), cls: 'blue', unit: s.gpuVRAM + 'GB' },
+    { label: '内存', value: s.ramCapacity + 'GB', cls: '', unit: ramLabel },
+    { label: '存储', value: s.storageCapacity >= 1024 ? (s.storageCapacity/1024).toFixed(0) + 'TB' : s.storageCapacity + 'GB', cls: '' }
+  ];
+  for (var i = 0; i < metrics.length; i++) {
+    cards += '<div class="metric-card">';
+    cards += '<div class="label">' + metrics[i].label + '</div>';
+    cards += '<div class="value ' + metrics[i].cls + '">' + metrics[i].value + '</div>';
+    if (metrics[i].unit) cards += '<div style="font-size:10px;color:#86868b;">' + metrics[i].unit + '</div>';
+    cards += '</div>';
+  }
+  document.getElementById('summaryCards').innerHTML = cards;
+}
+
+function budgetTierLabel(budget) {
+  if (budget <= 3000) return '入门\u00a53K';
+  if (budget <= 5000) return '经济\u00a55K';
+  if (budget <= 8000) return '主流\u00a58K';
+  if (budget <= 10000) return '中高\u00a510K';
+  if (budget <= 15000) return '高性能\u00a515K';
+  if (budget <= 20000) return '旗舰\u00a520K';
+  if (budget <= 30000) return '发烧\u00a530K';
+  if (budget <= 40000) return '顶级\u00a540K';
+  return '至尊\u00a5' + (budget/1000).toFixed(0) + 'K';
+}
+
+// ---- Build Table ----
+function renderBuildTable(build) {
+  var parts = build.parts;
+  var headHtml = '<tr><th>类别</th><th>型号</th><th>关键参数</th><th>备注</th><th>价格</th></tr>';
+  document.getElementById('buildHead').innerHTML = headHtml;
+
+  var items = [
+    { cat: 'CPU', part: parts.cpu },
+    { cat: 'GPU', part: parts.gpu },
+    { cat: '主板', part: parts.mb },
+    { cat: '内存', part: parts.ram },
+    { cat: '存储', part: parts.storage },
+    { cat: '散热', part: parts.cooler },
+    { cat: '电源', part: parts.psu },
+    { cat: '机箱', part: parts.case }
+  ];
+  if (parts.monitor) items.push({ cat: '显示器', part: parts.monitor });
+  if (parts.peripheral) items.push({ cat: '键鼠', part: parts.peripheral });
+
+  var prices = items.map(function(i) { return i.part.price; });
+  var bestPrice = Math.min.apply(null, prices);
+  var worstPrice = Math.max.apply(null, prices);
+
+  var bodyHtml = '';
+  if (state.warrantyMode === 'official') {
+    bodyHtml += '<tr style="background:#f0f7ff;"><td colspan="5" style="padding:8px 16px;font-size:11px;color:#0071e3;">&#128230; 官方自营模式: 仅推荐京东/天猫旗舰店有售且带保修的产品</td></tr>';
+  } else {
+    bodyHtml += '<tr style="background:#fff8e1;"><td colspan="5" style="padding:8px 16px;font-size:11px;color:#e65100;">&#128176; 全渠道模式: 含第三方渠道产品，价格更低但不含官方保修</td></tr>';
+  }
+  items.forEach(function(item) {
+    var params = getParams(item.part);
+    var badge = item.part.official ? '' : ' <span class="mode-badge grey">非自营</span>';
+    if (item.part.source) {
+      var srcBadges = item.part.source.split('+');
+      srcBadges.forEach(function(s) {
+        if (s === 'gkw') badge += ' <span class="data-badge gkw">极客湾</span>';
+        else if (s === 'jd') badge += ' <span class="data-badge jd">京东</span>';
+        else if (s === 'intel' || s === 'amd' || s === 'nvidia') badge += ' <span class="data-badge off">官方</span>';
+      });
+    }
+    bodyHtml += '<tr>';
+    bodyHtml += '<td class="cat-cell">' + item.cat + '</td>';
+    bodyHtml += '<td><strong>' + item.part.name + '</strong>' + badge + '</td>';
+    bodyHtml += '<td style="font-size:12px;color:#555;">' + params + '</td>';
+    var noteText = item.part.note || '';
+    if (item.part.reason) {
+      noteText += '<div style="font-size:10px;color:#666;margin-top:2px;line-height:1.4;">\u279c ' + item.part.reason + '</div>';
+    }
+    bodyHtml += '<td style="font-size:11px;color:#86868b;max-width:240px;">' + noteText + '</td>';
+    var priceStyle = 'font-weight:600;text-align:right;white-space:nowrap;';
+    if (item.part.price === bestPrice) priceStyle += ' color:#3b6d11;';
+    else if (item.part.price === worstPrice) priceStyle += ' color:#c0392b;';
+    bodyHtml += '<td style="' + priceStyle + '">\u00a5' + item.part.price.toLocaleString() + '</td>';
+    bodyHtml += '</tr>';
+  });
+  bodyHtml += '<tr style="background:#f0f7ff;font-weight:600;">';
+  bodyHtml += '<td colspan="4" style="padding:10px 16px;text-align:right;">合计</td>';
+  bodyHtml += '<td class="price-cell" style="color:#0071e3;">\u00a5' + build.totalPrice.toLocaleString() + '</td>';
+  bodyHtml += '</tr>';
+  document.getElementById('buildBody').innerHTML = bodyHtml;
+}
+
+function getParams(part) {
+  if (!part) return '';
+  if (part.cores !== undefined) return part.cores + '\u6838' + part.threads + '\u7ebf\u7a0b / ' + part.boost + 'GHz / ' + part.tdp + 'W';
+  if (part.cuda !== undefined) return part.vram + 'GB / ' + (part.cuda/1024).toFixed(0) + 'K CUDA / ' + part.tdp + 'W';
+  if (part.capacity !== undefined && part.freq !== undefined) {
+    var eccTag = part.ecc ? ' <span class="ecc-badge">ECC</span>' : '';
+    return part.capacity + 'GB ' + part.freq + 'MHz ' + part.gen.toUpperCase() + eccTag;
+  }
+  if (part.capacity !== undefined && part.freq === undefined) return part.capacity >= 1024 ? (part.capacity/1024).toFixed(0) + 'TB' : part.capacity + 'GB';
+  if (part.socket !== undefined) return (part.brand ? (part.brand.charAt(0).toUpperCase()+part.brand.slice(1)) + ' / ' : '') + part.chipset + ' / ' + part.ddr.toUpperCase() + (part.ddrSlot ? ' ' + part.ddrSlot + '\u69fd' : '') + (part.ddrMax ? ' max' + (part.ddrMax >= 1024 ? (part.ddrMax/1024).toFixed(0) + 'TB' : part.ddrMax + 'GB') : '') + (part.ecc ? ' ECC' : '');
+  if (part.wattage !== undefined) return part.wattage + 'W ' + part.rating;
+  if (part.type !== undefined && part.type === 'air') return part.name;
+  if (part.size !== undefined) return part.size;
+  if (part.hz !== undefined) return part.size + '" ' + part.hz + 'Hz';
+  return part.name || '';
+}
+
+// ---- All Components ----
+function renderAllComponents() {
+  var wrap = document.getElementById('allCompBody');
+  var innerHtml = '';
+  
+  // CPU by vendor
+  var intelCPU = DB.cpu.filter(function(c) { return c.brand === 'intel'; });
+  var amdCPU = DB.cpu.filter(function(c) { return c.brand === 'amd'; });
+  innerHtml += '<div style="padding:12px 16px;border-bottom:1px solid #e8e8ed;font-weight:600;font-size:13px;">CPU \u2014 \u82f1\u7279\u5c14 (Intel)</div>';
+  innerHtml += renderSubTable(intelCPU, 'cpu');
+  innerHtml += '<div style="padding:12px 16px;border-bottom:1px solid #e8e8ed;font-weight:600;font-size:13px;">CPU \u2014 AMD</div>';
+  innerHtml += renderSubTable(amdCPU, 'cpu');
+  
+  // GPU by vendor
+  var nvidiaGPU = DB.gpu.filter(function(g) { return g.brand === 'nvidia'; });
+  var amdGPU = DB.gpu.filter(function(g) { return g.brand === 'amd'; });
+  innerHtml += '<div style="padding:12px 16px;border-bottom:1px solid #e8e8ed;font-weight:600;font-size:13px;">GPU \u2014 NVIDIA</div>';
+  innerHtml += renderSubTable(nvidiaGPU, 'gpu');
+  innerHtml += '<div style="padding:12px 16px;border-bottom:1px solid #e8e8ed;font-weight:600;font-size:13px;">GPU \u2014 AMD</div>';
+  innerHtml += renderSubTable(amdGPU, 'gpu');
+  
+  // Compute cards - by vendor
+  var nvidiaComp = DB.compute.filter(function(c) { return c.brand === 'nvidia'; });
+  var amdComp = DB.compute.filter(function(c) { return c.brand === 'amd'; });
+  var appleComp = DB.compute.filter(function(c) { return c.brand === 'apple'; });
+  
+  function renderComputeSection(data, title, headRow) {
+    if (data.length === 0) return '';
+    var h = '<div style="padding:12px 16px;border-bottom:1px solid #e8e8ed;font-weight:600;font-size:13px;background:#f0f7ff;">&#9889; ' + title + '</div>';
+    h += '<div style="overflow-x:auto;"><table class="component-table"><thead>' + headRow + '</thead><tbody>';
+    data.forEach(function(item, idx) {
+      var isOdd = idx % 2 === 1;
+      var cpuSpec = item.cpuCores ? item.cpuCores + '\u6838' : '-';
+      var gpuSpec = item.gpuCores ? (item.gpuCores/1024).toFixed(1) + 'K' : (item.vram ? item.vram + 'GB' : '-');
+      var memSpec = item.unifiedMem ? item.unifiedMem + 'GB' : (item.vram ? item.vram + 'GB HBM' : '-');
+      var aiTOPS = item.aiTOPS ? (item.aiTOPS >= 1000 ? (item.aiTOPS/1000).toFixed(1) + 'P' : item.aiTOPS + 'T') : '-';
+      var score = item.aiScore || 0;
+      var price = item.price || 0;
+      h += '<tr' + (isOdd ? ' style="background:#fafafa;"' : '') + '>';
+      h += '<td style="padding:8px 12px;font-weight:500;">' + item.name + '</td>';
+      h += '<td style="padding:8px 12px;">' + cpuSpec + '</td>';
+      h += '<td style="padding:8px 12px;">' + gpuSpec + '</td>';
+      h += '<td style="padding:8px 12px;">' + memSpec + '</td>';
+      h += '<td style="padding:8px 12px;">' + aiTOPS + '</td>';
+      h += '<td style="padding:8px 12px;">' + score.toLocaleString() + '</td>';
+      h += '<td style="padding:8px 12px;text-align:right;font-weight:600;">\u00a5' + price.toLocaleString() + '</td>';
+      h += '</tr>';
+    });
+    h += '</tbody></table></div>';
+    return h;
+  }
+  
+  var computeHead = '<tr><th>\u578b\u53f7</th><th>CPU\u6838</th><th>GPU\u6838</th><th>\u5185\u5b58/\u663e\u5b58</th><th>AI TOPS</th><th>AI\u5206</th><th>\u4ef7\u683c</th></tr>';
+  innerHtml += renderComputeSection(nvidiaComp, '\u8ba1\u7b97\u5361 \u2014 NVIDIA', computeHead);
+  innerHtml += renderComputeSection(amdComp, '\u8ba1\u7b97\u5361 \u2014 AMD Instinct', computeHead);
+  innerHtml += renderComputeSection(appleComp, 'Apple Silicon \u2014 Mac Studio', computeHead);
+  
+  // RAM & Storage
+  innerHtml += '<div style="padding:12px 16px;border-bottom:1px solid #e8e8ed;font-weight:600;font-size:13px;">\u5185\u5b58 (RAM)</div>';
+  innerHtml += renderSubTable(DB.ram, 'ram');
+  innerHtml += '<div style="padding:12px 16px;border-bottom:1px solid #e8e8ed;font-weight:600;font-size:13px;">\u5b58\u50a8 (Storage)</div>';
+  innerHtml += renderSubTable(DB.storage, 'storage');
+  
+  wrap.innerHTML = innerHtml;
+}
+
+function renderSubTable(data, type) {
+  if (data.length === 0) return '<div style="padding:20px;text-align:center;color:#86868b;">\u6682\u65e0\u6570\u636e</div>';
+  var headers = {
+    cpu: '\u003ctr\u003e\u003cth\u003e\u578b\u53f7\u003c/th\u003e\u003cth\u003e\u6838\u5fc3/\u7ebf\u7a0b\u003c/th\u003e\u003cth\u003e\u52a0\u901f\u9891\u7387\u003c/th\u003e\u003cth\u003eTDP\u003c/th\u003e\u003cth\u003e\u5355\u6838\u5206\u003c/th\u003e\u003cth\u003e\u591a\u6838\u5206\u003c/th\u003e\u003cth\u003e\u4ef7\u683c\u003c/th\u003e\u003c/tr\u003e',
+    gpu: '\u003ctr\u003e\u003cth\u003e\u578b\u53f7\u003c/th\u003e\u003cth\u003e\u663e\u5b58\u003c/th\u003e\u003cth\u003eCUDA\u003c/th\u003e\u003cth\u003eTDP\u003c/th\u003e\u003cth\u003e\u6e38\u620f\u5206\u003c/th\u003e\u003cth\u003eAI\u5206\u003c/th\u003e\u003cth\u003e\u4ef7\u683c\u003c/th\u003e\u003c/tr\u003e',
+    ram: '\u003ctr\u003e\u003cth\u003e\u578b\u53f7\u003c/th\u003e\u003cth\u003e\u5bb9\u91cf\u003c/th\u003e\u003cth\u003e\u9891\u7387\u003c/th\u003e\u003cth\u003e\u7c7b\u578b\u003c/th\u003e\u003cth\u003e\u4ef7\u683c\u003c/th\u003e\u003c/tr\u003e',
+    storage: '\u003ctr\u003e\u003cth\u003e\u578b\u53f7\u003c/th\u003e\u003cth\u003e\u5bb9\u91cf\u003c/th\u003e\u003cth\u003e\u8bfb\u53d6\u901f\u5ea6\u003c/th\u003e\u003cth\u003e\u4ef7\u683c\u003c/th\u003e\u003c/tr\u003e'
+  };
+  var html = '<div style="overflow-x:auto;"><table class="component-table"><thead>' + (headers[type] || '') + '</thead><tbody>';
+  data.forEach(function(item, idx) {
+    var vals = getRowValues(type, item);
+    var isOdd = idx % 2 === 1;
+    html += '<tr' + (isOdd ? ' style="background:#fafafa;"' : '') + '>';
+    vals.forEach(function(v, vi) {
+      var style = vi === vals.length - 1 ? 'padding:8px 12px;text-align:right;white-space:nowrap;font-weight:600;' : 'padding:8px 12px;white-space:nowrap;';
+      if (vi === 0) style += 'font-weight:500;';
+      html += '<td style="' + style + '">' + v + '</td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  return html;
+}
+
+function getRowValues(type, item) {
+  if (type === 'cpu') return [item.name, item.cores + 'C/' + item.threads + 'T', item.boost + 'GHz', item.tdp + 'W', item.singleScore, item.multiScore, '\u00a5' + item.price];
+  if (type === 'gpu') return [item.name, item.vram + 'GB', (item.cuda/1024).toFixed(1) + 'K', item.tdp + 'W', item.gameScore, item.aiScore, '\u00a5' + item.price];
+  if (type === 'ram') {
+    var genName = item.gen.toUpperCase() + (item.ecc ? ' ECC' : '');
+    return [item.name, item.capacity + 'GB', item.freq + 'MHz', genName, '\u00a5' + item.price];
+  }
+  if (type === 'storage') {
+    var cap = item.capacity >= 1024 ? (item.capacity/1024).toFixed(0) + 'TB' : item.capacity + 'GB';
+    var speed = item.seqRead ? (item.seqRead/1000).toFixed(1) + 'GB/s' : '-';
+    return [item.name, cap, speed, '\u00a5' + item.price];
+  }
+  return [];
+}
+
+// ---- Alternatives ----
+function renderAlternatives(alts) {
+  var html = '';
+  alts.forEach(function(alt) {
+    var diff = alt.totalPrice - currentBuild.totalPrice;
+    var diffStr = diff > 0 ? '+ \u00a5' + diff.toLocaleString() : (diff < 0 ? '- \u00a5' + Math.abs(diff).toLocaleString() : '\u2212');
+    var diffCls = diff > 0 ? 'color:#c0392b;' : (diff < 0 ? 'color:#3b6d11;' : '');
+    html += '<div class="alt-card" onclick="showAltDetail(' + alts.indexOf(alt) + ')">';
+    var cpuOk = alt.parts.cpu && alt.parts.cpu.official !== false;
+    var gpuOk = alt.parts.gpu && alt.parts.gpu.official !== false;
+    var warrantyTag = (state.warrantyMode === 'official' || (cpuOk && gpuOk)) ? ' <span class="mode-badge official">保</span>' : ' <span class="mode-badge grey">无保</span>';
+    html += '<div class="alt-title">' + (alt.parts.cpu.name.split(' ').slice(0,2).join(' ')) + ' + ' + (alt.parts.gpu.name.split(' ').slice(0,2).join(' ')) + warrantyTag + '</div>';
+    html += '<div style="font-size:11px;color:#86868b;margin:4px 0;">';
+    html += alt.performanceScore + '/100 | ' + alt.summary.ramCapacity + 'GB ' + (alt.summary.ramECC ? 'ECC ' : '') + alt.summary.ramGen.toUpperCase();
+    html += ' | ' + (alt.summary.storageCapacity >= 1024 ? (alt.summary.storageCapacity/1024).toFixed(0) + 'TB' : alt.summary.storageCapacity + 'GB');
+    html += '</div>';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+    html += '<span class="alt-price">\u00a5' + alt.totalPrice.toLocaleString() + '</span>';
+    html += '<span class="alt-diff" style="' + diffCls + '">' + diffStr + '</span>';
+    html += '</div></div>';
+  });
+  if (alts.length === 0) html = '<div style="padding:20px;text-align:center;color:#86868b;">暂无可比备选方案</div>';
+  document.getElementById('altGrid').innerHTML = html;
+}
+
+function showAltDetail(idx) {
+  var alt = currentAlternatives[idx];
+  if (alt) {
+    var bn = analyzeBottleneck(alt, state.scenario, state.budget);
+    renderBottleneck(bn);
+    renderSummary(alt);
+    renderBuildTable(alt);
+    document.getElementById('scenarioLabel').textContent = scenarioConfig[state.scenario].label + ' | \u5907\u9009\u65b9\u6848 #' + (idx + 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+// ==================== PRICE HISTORY & CHART ====================
+
+function generatePriceHistory(item) {
+  // Generate simulated monthly price data based on launch price, current price, and launch date
+  var months = [];
+  var now = new Date();
+  var start;
+  if (item.launchDate) {
+    var parts = item.launchDate.split('-');
+    start = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+  } else {
+    start = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  }
+  var launch = item.launchPrice || (item.price * 1.1);
+  var current = item.price;
+  var diff = current - launch;
+  var steps = 0;
+  var date = new Date(start);
+  while (date <= now) {
+    months.push({ year: date.getFullYear(), month: date.getMonth() + 1 });
+    date.setMonth(date.getMonth() + 1);
+    steps++;
+  }
+  // Simulate JD prices (slightly above current, trending down)
+  var jdPrices = [];
+  var tbPrices = [];
+  var jdStart = launch * (1 + 0.03);
+  var tbStart = launch * (1 + 0.01);
+  var jdCurrent = current * (1 + 0.02);
+  var tbCurrent = current;
+  for (var i = 0; i < steps; i++) {
+    var t = i / (steps - 1 || 1);
+    // Smooth curve with some noise
+    var noiseJD = (Math.random() - 0.5) * current * 0.02;
+    var noiseTB = (Math.random() - 0.5) * current * 0.025;
+    var jd = jdStart + (jdCurrent - jdStart) * Math.pow(t, 0.7) + noiseJD;
+    var tb = tbStart + (tbCurrent - tbStart) * Math.pow(t, 0.8) + noiseTB;
+    jdPrices.push({ price: Math.round(jd) });
+    tbPrices.push({ price: Math.round(tb) });
+  }
+  return { months: months, jd: jdPrices, tb: tbPrices, launch: Math.round(launch), current: current };
+}
+
+function buildPriceDb() {
+  var pdb = {};
+  DB.cpu.forEach(function(c) { if (c.launchPrice) pdb[c.id] = generatePriceHistory(c); });
+  DB.gpu.forEach(function(g) { if (g.launchPrice) pdb[g.id] = generatePriceHistory(g); });
+  DB.compute.forEach(function(c) { if (c.launchPrice) pdb[c.id] = generatePriceHistory(c); });
+  return pdb;
+}
+
+function populatePriceSelector() {
+  var sel = document.getElementById('priceChartSelect');
+  if (!sel) return;
+  var prevVal = sel.value;
+  // Rebuild optgroups
+  sel.innerHTML = '';
+  var cpuGroup = document.createElement('optgroup'); cpuGroup.label = 'CPU';
+  var gpuGroup = document.createElement('optgroup'); gpuGroup.label = 'GPU';
+  var compGroup = document.createElement('optgroup'); compGroup.label = '\u8ba1\u7b97\u5361 Compute';
+  DB.cpu.forEach(function(c) {
+    var opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name + ' (\u00a5' + c.price + ')'; cpuGroup.appendChild(opt);
+  });
+  DB.gpu.forEach(function(g) {
+    var opt = document.createElement('option'); opt.value = g.id; opt.textContent = g.name + ' (\u00a5' + g.price + ')'; gpuGroup.appendChild(opt);
+  });
+  DB.compute.forEach(function(c) {
+    var opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name + ' (\u00a5' + c.price + ')'; compGroup.appendChild(opt);
+  });
+  sel.appendChild(cpuGroup); sel.appendChild(gpuGroup); sel.appendChild(compGroup);
+  sel.value = prevVal || 'U7-270K-Plus';
+  renderPriceChart();
+}
+
+function renderPriceChart() {
+  var sel = document.getElementById('priceChartSelect');
+  if (!sel) return;
+  var itemId = sel.value;
+  var item = null;
+  var type = '';
+  for (var i = 0; i < DB.cpu.length; i++) { if (DB.cpu[i].id === itemId) { item = DB.cpu[i]; type = 'CPU'; break; } }
+  if (!item) for (var j = 0; j < DB.gpu.length; j++) { if (DB.gpu[j].id === itemId) { item = DB.gpu[j]; type = 'GPU'; break; } }
+  if (!item) for (var k = 0; k < DB.compute.length; k++) { if (DB.compute[k].id === itemId) { item = DB.compute[k]; type = 'Compute'; break; } }
+  if (!item) return;
+
+  var hist = priceDb[itemId];
+  if (!hist) return;
+
+  document.getElementById('priceBadge').innerHTML =
+    '<span style="font-size:12px;">' + item.name + ' | 首发 \u00a5' + (item.launchPrice || '?') + ' | 当前京东 \u00a5' + hist.current + ' ' +
+    (hist.current < (item.launchPrice || hist.current) ? '<span style="color:#34c759;">\u25bc 降价</span>' : '<span style="color:#c0392b;">\u25b2 涨价</span>') + '</span>';
+
+  var canvas = document.getElementById('priceChartCanvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var w = canvas.parentElement.clientWidth;
+  var dpr = window.devicePixelRatio || 1;
+  canvas.width = w * dpr;
+  canvas.height = 280 * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = '280px';
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, 280);
+
+  var padding = { top: 30, right: 20, bottom: 40, left: 65 };
+  var chartW = w - padding.left - padding.right;
+  var chartH = 280 - padding.top - padding.bottom;
+
+  var months = hist.months;
+  var jdData = hist.jd;
+  var tbData = hist.tb;
+
+  // Determine Y range
+  var allPrices = [];
+  jdData.forEach(function(p) { allPrices.push(p.price); });
+  tbData.forEach(function(p) { allPrices.push(p.price); });
+  allPrices.push(hist.launch);
+  var minP = Math.min.apply(null, allPrices);
+  var maxP = Math.max.apply(null, allPrices);
+  var range = maxP - minP;
+  minP = Math.max(0, minP - range * 0.1);
+  maxP = maxP + range * 0.1;
+  if (minP === maxP) { minP -= 100; maxP += 100; }
+
+  // Grid lines
+  ctx.strokeStyle = '#f0f0f0';
+  ctx.lineWidth = 1;
+  var ySteps = 5;
+  for (var yi = 0; yi <= ySteps; yi++) {
+    var yVal = minP + (maxP - minP) * (1 - yi / ySteps);
+    var yPos = padding.top + chartH * (yi / ySteps);
+    ctx.beginPath();
+    ctx.moveTo(padding.left, yPos);
+    ctx.lineTo(w - padding.right, yPos);
+    ctx.stroke();
+    ctx.fillStyle = '#86868b';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('\u00a5' + Math.round(yVal), padding.left - 8, yPos + 4);
+  }
+
+  // X labels
+  var xStep = Math.max(1, Math.floor(months.length / 8));
+  for (var mi = 0; mi < months.length; mi += xStep) {
+    var xPos = padding.left + chartW * (mi / (months.length - 1 || 1));
+    ctx.fillStyle = '#86868b';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(months[mi].year + '-' + String(months[mi].month).padStart(2, '0'), xPos, 280 - 8);
+  }
+
+  function drawLine(data, color, label, dashed) {
+    if (data.length < 2) return;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash(dashed ? [6, 3] : []);
+    ctx.beginPath();
+    for (var di = 0; di < data.length; di++) {
+      var x = padding.left + chartW * (di / (data.length - 1 || 1));
+      var y = padding.top + chartH * (1 - (data[di].price - minP) / (maxP - minP));
+      if (di === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Draw lines
+  drawLine(jdData, '#0071e3', false);
+  drawLine(tbData, '#ff9500', false);
+  // Launch price line
+  if (hist.launch) {
+    ctx.strokeStyle = '#34c759';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    var launchY = padding.top + chartH * (1 - (hist.launch - minP) / (maxP - minP));
+    ctx.beginPath();
+    ctx.moveTo(padding.left, launchY);
+    ctx.lineTo(w - padding.right, launchY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#34c759';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('\u767c\u552e\u4ef7 \u00a5' + hist.launch, padding.left + 6, launchY - 4);
+  }
+
+  // Last price marker
+  var lastIdx = jdData.length - 1;
+  var lastX = padding.left + chartW;
+  var lastY = padding.top + chartH * (1 - (jdData[lastIdx].price - minP) / (maxP - minP));
+  ctx.fillStyle = '#c0392b';
+  ctx.beginPath();
+  ctx.arc(lastX, lastY, 5, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.fillStyle = '#c0392b';
+  ctx.font = 'bold 12px sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('\u00a5' + jdData[lastIdx].price, lastX + 6, lastY - 8);
+
+  // Crosshair
+  if (hoverX !== undefined && hoverX !== null) {
+    var dataIdx = Math.round((hoverX - padding.left) / chartW * (months.length - 1));
+    dataIdx = Math.max(0, Math.min(months.length - 1, dataIdx));
+    var cx = padding.left + chartW * (dataIdx / (months.length - 1 || 1));
+    var jdY = padding.top + chartH * (1 - (jdData[dataIdx].price - minP) / (maxP - minP));
+    var tbY = padding.top + chartH * (1 - (tbData[dataIdx].price - minP) / (maxP - minP));
+
+    // Vertical line
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(cx, padding.top);
+    ctx.lineTo(cx, padding.top + chartH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // JD price dot
+    ctx.fillStyle = '#0071e3';
+    ctx.beginPath();
+    ctx.arc(cx, jdY, 6, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(cx, jdY, 3, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // TB price dot
+    ctx.fillStyle = '#ff9500';
+    ctx.beginPath();
+    ctx.arc(cx, tbY, 6, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(cx, tbY, 3, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // Tooltip
+    var toolX = cx + 12;
+    if (toolX + 120 > w - padding.right) toolX = cx - 130;
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    var tipW = 120, tipH = 42;
+    var tipY = Math.max(padding.top, Math.min(padding.top + chartH - tipH - 4, jdY - tipH - 4));
+    ctx.beginPath();
+    ctx.roundRect(toolX, tipY, tipW, tipH, 6);
+    ctx.fill();
+
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(months[dataIdx].year + '-' + String(months[dataIdx].month).padStart(2, '0'), toolX + 8, tipY + 14);
+    ctx.fillStyle = '#0071e3';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.fillText('\u4eac\u4e1c: \u00a5' + jdData[dataIdx].price, toolX + 8, tipY + 32);
+    ctx.fillStyle = '#ff9500';
+    ctx.font = '12px sans-serif';
+    ctx.fillText('\u5929\u732b: \u00a5' + tbData[dataIdx].price, toolX + 76, tipY + 32);
+  }
+
+  // Store chart state for mouse hover redraw
+  renderPriceChart._ctx = ctx;
+  renderPriceChart._padding = padding;
+  renderPriceChart._chartW = chartW;
+  renderPriceChart._chartH = chartH;
+  renderPriceChart._w = w;
+  renderPriceChart._months = months;
+  renderPriceChart._jdData = jdData;
+  renderPriceChart._tbData = tbData;
+  renderPriceChart._minP = minP;
+  renderPriceChart._maxP = maxP;
+  renderPriceChart._canvas = canvas;
+  renderPriceChart._dpr = dpr;
+  renderPriceChart._hist = hist;
+  renderPriceChart._baseDraw = function() {};
+  // Capture initial draw (redraw without crosshair later)
+  if (!renderPriceChart._initialDrawDone) {
+    renderPriceChart._initialDrawDone = true;
+    renderPriceChart._emptyDraw = function() { renderPriceChart(); };
+  }
+}
+
+// Mouse hover crosshair handler
+document.getElementById('priceChartCanvas').onmousemove = function(e) {
+  var cnv = document.getElementById('priceChartCanvas');
+  if (!cnv) return;
+  var rc = renderPriceChart;
+  if (!rc._ctx) return;
+  var dpr = rc._dpr || 1;
+  var rect = cnv.getBoundingClientRect();
+  var mx = (e.clientX - rect.left) * (cnv.width / dpr / rect.width);
+  var pad = rc._padding;
+  if (mx >= pad.left && mx <= rc._w - pad.right) {
+    var dataIdx = Math.round((mx - pad.left) / rc._chartW * (rc._months.length - 1));
+    dataIdx = Math.max(0, Math.min(rc._months.length - 1, dataIdx));
+    var cx = pad.left + rc._chartW * (dataIdx / (rc._months.length - 1 || 1));
+    var jdY = pad.top + rc._chartH * (1 - (rc._jdData[dataIdx].price - rc._minP) / (rc._maxP - rc._minP));
+    var tbY = pad.top + rc._chartH * (1 - (rc._tbData[dataIdx].price - rc._minP) / (rc._maxP - rc._minP));
+
+    // Full redraw with crosshair
+    renderPriceChart();
+    var ctx = rc._ctx;
+    var w = rc._w;
+
+    // Vertical dashed line
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(cx, pad.top);
+    ctx.lineTo(cx, pad.top + rc._chartH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // JD dot
+    ctx.fillStyle = '#0071e3';
+    ctx.beginPath(); ctx.arc(cx, jdY, 6, 0, 2*Math.PI); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(cx, jdY, 3, 0, 2*Math.PI); ctx.fill();
+    // TB dot
+    ctx.fillStyle = '#ff9500';
+    ctx.beginPath(); ctx.arc(cx, tbY, 6, 0, 2*Math.PI); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(cx, tbY, 3, 0, 2*Math.PI); ctx.fill();
+
+    // Tooltip
+    var toolX = cx + 12;
+    if (toolX + 120 > w - pad.right) toolX = cx - 130;
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    var tipY = Math.max(pad.top, Math.min(pad.top + rc._chartH - 46, jdY - 46));
+    ctx.beginPath();
+    ctx.roundRect(toolX, tipY, 128, 46, 6);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(rc._months[dataIdx].year + '-' + String(rc._months[dataIdx].month).padStart(2, '0'), toolX + 8, tipY + 14);
+    ctx.fillStyle = '#0071e3';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.fillText('\u4eac\u4e1c: \u00a5' + rc._jdData[dataIdx].price, toolX + 8, tipY + 32);
+    ctx.fillStyle = '#ff9500';
+    ctx.font = '12px sans-serif';
+    ctx.fillText('\u5929\u732b: \u00a5' + rc._tbData[dataIdx].price, toolX + 76, tipY + 32);
+  }
+};
+
+document.getElementById('priceChartCanvas').onmouseleave = function() {
+  renderPriceChart();
+};
+
+// Helper: roundRect for Canvas
+CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+  if (w < 2 * r) r = w / 2;
+  if (h < 2 * r) r = h / 2;
+  this.moveTo(x + r, y);
+  this.lineTo(x + w - r, y);
+  this.quadraticCurveTo(x + w, y, x + w, y + r);
+  this.lineTo(x + w, y + h - r);
+  this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  this.lineTo(x + r, y + h);
+  this.quadraticCurveTo(x, y + h, x, y + h - r);
+  this.lineTo(x, y + r);
+  this.quadraticCurveTo(x, y, x + r, y);
+  return this;
+};
+
+var priceDb = {};
+
+// ==================== INIT ====================
+// Build price history database
+priceDb = buildPriceDb();
+rebuild();
+populatePriceSelector();
+</script>
+</body>
+</html>
