@@ -905,7 +905,7 @@ function analyzeBottleneck(build, scenario, budget) {
         cpuOpts.sort(function(a,b) { return a.price - b.price; });
         if (cpuOpts.length > 0) upgradeCpu = cpuOpts[0];
         var upgradeMsg = upgradeCpu ? '可升级至 ' + upgradeCpu.name.split(' ').slice(0,3).join(' ') + ' (+' + (upgradeCpu.price - cpu.price > 0 ? '\u00a5' + (upgradeCpu.price - cpu.price) : '\u00a5' + upgradeCpu.price) + ')' : '升级CPU至单核分 ' + upgradeTargetScore + ' 以上';
-        bn.cpu = { level: severity > 60 ? 'critical' : 'warn', severity: severity,
+        bn.cpu = { level: severity > 70 ? 'limited' : (severity > 30 ? 'room' : 'good'), severity: severity,
           ratio: cpuGpuRatio, detail: 'CPU单核性能(' + cpu.singleScore + ') 相对GPU游戏分(' + gpu.gameScore + ')偏低',
           fix: upgradeMsg };
         scores.push(severity);
@@ -918,7 +918,7 @@ function analyzeBottleneck(build, scenario, budget) {
       var threshold = scenario === 'ai' ? 0.5 : 1.0;
       if (cpuGpuRatio2 < threshold * 0.6) {
         var severity2 = Math.round((1 - cpuGpuRatio2 / (threshold * 0.6)) * 100);
-        bn.cpu = { level: severity2 > 60 ? 'critical' : 'warn', severity: severity2,
+        bn.cpu = { level: severity2 > 70 ? 'limited' : (severity2 > 30 ? 'room' : 'good'), severity: severity2,
           detail: 'CPU多核分(' + cpu.multiScore + ') 相对GPU算力偏低',
           fix: '建议升级CPU至多核分 ' + Math.round((gpu.aiScore || gpu.gameScore) * threshold * 0.7) + ' 以上或增加核心数' };
         scores.push(severity2);
@@ -954,7 +954,7 @@ function analyzeBottleneck(build, scenario, budget) {
         gpuOpts.sort(function(a,b) { return a.price - b.price; });
         if (gpuOpts.length > 0) upgradeGpu = gpuOpts[0];
         var gpuUpgradeMsg = upgradeGpu ? '可升级至 ' + upgradeGpu.name.split(' ').slice(0,3).join(' ') + ' (+' + (upgradeGpu.price - gpu.price > 0 ? '\u00a5' + (upgradeGpu.price - gpu.price) : '\u00a5' + upgradeGpu.price) + ')' : '升级GPU';
-        bn.gpu = { level: gpuSev > 50 ? 'critical' : 'warn', severity: gpuSev,
+        bn.gpu = { level: gpuSev > 70 ? 'limited' : (gpuSev > 30 ? 'room' : 'good'), severity: gpuSev,
           detail: 'GPU性能(' + gpu.gameScore + ') 在目标分辨率下可能成为瓶颈',
           fix: gpuUpgradeMsg };
         scores.push(gpuSev);
@@ -970,7 +970,7 @@ function analyzeBottleneck(build, scenario, budget) {
         var vramUpgrades = DB.gpu.filter(function(g) { return g.vram >= vramNeeded && officialFilter(g) && g.price <= gpu.price * 2; });
         vramUpgrades.sort(function(a,b) { return a.price - b.price; });
         var vramFix = vramUpgrades.length > 0 ? '建议升级至 ' + vramUpgrades.slice(0,3).map(function(g) { return g.name + '(' + g.vram + 'GB)'; }).join(' / ') : '选择显存大于' + vramNeeded + 'GB的GPU (如RTX 5090D 32GB)';
-        bn.gpu = { level: vramSev > 50 ? 'critical' : 'warn', severity: vramSev,
+        bn.gpu = { level: vramSev > 70 ? 'limited' : (vramSev > 30 ? 'room' : 'good'), severity: vramSev,
           detail: 'GPU显存(' + gpu.vram + 'GB) 不够满足AI工作负载需求(建议' + vramNeeded + 'GB+)',
           fix: vramFix };
         scores.push(vramSev);
@@ -1021,7 +1021,7 @@ function analyzeBottleneck(build, scenario, budget) {
         ramFix = '升级至 ' + pairSticks + 'x ' + pair.name + ' (+' + (costDiff2 > 0 ? '\u00a5' + costDiff2 : '\u00a5' + pairCost) + ')';
       }
     }
-    bn.ram = { level: ramSev > 50 ? 'critical' : 'warn', severity: ramSev,
+    bn.ram = { level: ramSev > 70 ? 'limited' : (ramSev > 30 ? 'room' : 'good'), severity: ramSev,
       detail: effectiveRAM + 'GB < 建议' + idealRAM + 'GB (' + ramNote + ')',
       fix: ramFix };
     scores.push(ramSev);
@@ -1037,16 +1037,16 @@ function analyzeBottleneck(build, scenario, budget) {
       var eccOldTotal = (ram.price * (ram.sticks || 1));
       eccFix = '替换为 ' + eccSticks + 'x ' + bestECC.name + ' (+' + (eccTotalPrice - eccOldTotal > 0 ? '\u00a5' + (eccTotalPrice - eccOldTotal) : '\u00a5' + eccTotalPrice) + ')' + (eccOpts.length > 1 ? '，另有' + eccOpts.slice(1).map(function(e) { return e.name; }).join('、') : '');
     }
-    bn.ram = { level: 'warn', severity: 20, detail: (ram.totalCapacity || ram.capacity) + 'GB 非ECC内存，工作站建议ECC以保障数据完整性',
+    bn.ram = { level: 'room', severity: 20, detail: (ram.totalCapacity || ram.capacity) + 'GB 非ECC内存，工作站建议ECC以保障数据完整性',
       fix: eccFix };
     scores.push(20);
   } else if (ram.ecc && build.parts.mb && !build.parts.mb.ecc) {
     // ECC 内存已选但主板不支持 ECC — 数据联动排查
-    bn.ram = { level: 'warn', severity: 25, detail: 'ECC内存(' + ram.name + ') 搭配不支持ECC的主板(' + build.parts.mb.name + ')，ECC功能无法启用',
+    bn.ram = { level: 'room', severity: 25, detail: 'ECC内存(' + ram.name + ') 搭配不支持ECC的主板(' + build.parts.mb.name + ')，ECC功能无法启用',
       fix: '更换为支持ECC的主板（如 X870E / B850 / W680 系列）或换回非ECC内存' };
     scores.push(25);
   } else if (ram.freq < (scenarioConfig[scenario].ramPreferFreq || 3200)) {
-    bn.ram = { level: 'warn', severity: 15, detail: 'RAM频率(' + ram.freq + 'MHz) 略低于最佳(' + scenarioConfig[scenario].ramPreferFreq + 'MHz)',
+    bn.ram = { level: 'room', severity: 15, detail: 'RAM频率(' + ram.freq + 'MHz) 略低于最佳(' + scenarioConfig[scenario].ramPreferFreq + 'MHz)',
       fix: '可选更高频率内存提升性能' };
     scores.push(15);
   } else {
@@ -1060,7 +1060,7 @@ function analyzeBottleneck(build, scenario, budget) {
   if (scenario === 'workstation') speedThreshold = 7000;
   if (storage.seqRead < speedThreshold) {
     var storSev = Math.round((1 - storage.seqRead / speedThreshold) * 100);
-    bn.storage = { level: storSev > 50 ? 'critical' : 'warn', severity: storSev,
+    bn.storage = { level: storSev > 70 ? 'limited' : (storSev > 30 ? 'room' : 'good'), severity: storSev,
       detail: '存储读取速度(' + (storage.seqRead/1000).toFixed(1) + 'GB/s) < 建议' + (speedThreshold/1000).toFixed(1) + 'GB/s',
       fix: '建议升级至 PCIe 4.0+ NVMe SSD，读取速度≥' + (speedThreshold/1000).toFixed(1) + 'GB/s' };
     scores.push(storSev);
@@ -1072,8 +1072,8 @@ function analyzeBottleneck(build, scenario, budget) {
 
   // ---- Overall ----
   var maxScore = Math.max.apply(null, scores);
-  if (maxScore >= 50) bn.overall = 'critical';
-  else if (maxScore >= 20) bn.overall = 'warn';
+  if (maxScore >= 70) bn.overall = 'limited';
+  else if (maxScore >= 30) bn.overall = 'room';
   else bn.overall = 'good';
 
   // ---- Brand Compatibility Check ----
@@ -1086,9 +1086,9 @@ function analyzeBottleneck(build, scenario, budget) {
       brandExplain = '\u534e\u87f6(ASRock)\u4e3b\u8981\u4ea7\u54c1\u7ebf\u4e3aAMD AM5\u5e73\u53f0\uff0cIntel LGA1851\u4e3b\u677f\u6781\u5c11\uff0c\u5efa\u8bae\u5207\u6362\u4e3b\u677f\u54c1\u724c\u4e3a\u534e\u7855/\u5fae\u661f';
     }
     if (brandExplain) {
-      bn.brandWarning = { level: 'warn', severity: 30, detail: '\u4e3b\u677f\u4e0eCPU/\u54c1\u724c\u672a\u5339\u914d: ' + build.parts.mb.name, fix: brandExplain };
+      bn.brandWarning = { level: 'room', severity: 30, detail: '\u4e3b\u677f\u4e0eCPU/\u54c1\u724c\u672a\u5339\u914d: ' + build.parts.mb.name, fix: brandExplain };
       scores.push(30);
-      bn.overall = Math.max(bn.overall === 'critical' ? 3 : (bn.overall === 'warn' ? 2 : 1), 2) === 3 ? 'critical' : 'warn';
+      bn.overall = 'room';
     }
   }
 
@@ -1372,25 +1372,42 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
   build.parts.storage = storage;
   usedBudget += storage.price;
 
-  // ---- Cooler ----
+  // ---- Cooler (TDP-aware, prefer tower over low-profile) ----
   var coolerPool = DB.cooler.slice().filter(function(c) { return officialFilter(c) && (state.coolerBrand === 'auto' || c.brand === state.coolerBrand); });
   if (coolerPool.length === 0) {
     build.warnings.push('当前品牌偏好+官方保修下无可用散热器，请切换至全渠道');
     coolerPool = [{ id:'none', name:'无可用散热器', type:'air', tdpCapable:999, price:0, note:'缺货', official:true }];
   }
-  if (cpu.tdp >= 200) {
-    if (budget > 10000 && cpu.tdp >= 250) {
-      build.parts.cooler = coolerPool.find(function(c) { return c.type === 'aio' && c.id.includes('360'); }) || coolerPool[coolerPool.length - 1];
-    } else if (cpu.tdp >= 150) {
-      build.parts.cooler = coolerPool.find(function(c) { return c.id === 'AIO-240'; }) || coolerPool.find(function(c) { return c.id === 'AIR-M'; }) || coolerPool[1];
+  // Sort: tdpCapable ascending, prefer air cooler for budget, AIO for high-end
+  coolerPool.sort(function(a,b) { return a.price - b.price; });
+  
+  // Find cheapest cooler that can handle the CPU TDP
+  var recommendedCooler = null;
+  for (var ci = 0; ci < coolerPool.length; ci++) {
+    var c = coolerPool[ci];
+    if (cpu.tdp >= 250 && budget > 10000) {
+      // High-end: prefer 360 AIO
+      if (c.type === 'aio' && c.id.includes('360') && c.tdpCapable >= cpu.tdp) {
+        recommendedCooler = c; break;
+      }
+    } else if (cpu.tdp >= 180) {
+      // Mid-high: prefer dual-tower air or 240 AIO
+      if (c.tdpCapable >= cpu.tdp && (c.type === 'air' || c.id.includes('240'))) {
+        recommendedCooler = c; break;
+      }
     } else {
-      build.parts.cooler = coolerPool.find(function(c) { return c.id === 'AIR-M'; }) || coolerPool[1];
+      // Low-mid: prefer single-tower air
+      if (c.tdpCapable >= cpu.tdp && c.type === 'air') {
+        recommendedCooler = c; break;
+      }
     }
-  } else if (cpu.tdp >= 100) {
-    build.parts.cooler = coolerPool[1];
-  } else {
-    build.parts.cooler = coolerPool[0];
   }
+  // Fallback: pick the highest TDP capable cooler
+  if (!recommendedCooler) {
+    coolerPool.sort(function(a,b) { return b.tdpCapable - a.tdpCapable; });
+    recommendedCooler = coolerPool[0];
+  }
+  build.parts.cooler = recommendedCooler;
   usedBudget += build.parts.cooler.price;
 
   // Check cooling bottleneck
@@ -2226,8 +2243,11 @@ function renderBottleneck(bn) {
     document.getElementById('bnGrid').innerHTML = '<div style="padding:16px 24px;text-align:center;color:#86868b;font-size:13px;">&#63743; Apple Mac Studio 为整机销售, 所有硬件组件统一集成于SoC中, 不存在组件间兼容性或瓶颈问题。请根据预算和使用需求在型号对比卡片中选择合适的配置。</div>';
     return;
   }
-  var overallText = { good: '无瓶颈, 配置均衡', warn: '轻度瓶颈, 建议优化', critical: '存在严重瓶颈, 建议升级' }[bn.overall] || '正常';
-  document.getElementById('bnOverall').innerHTML = '总体: <strong style="color:' + ({ good:'#34c759', warn:'#ff9500', critical:'#ff3b30' }[bn.overall]) + '">' + overallText + '</strong>';
+  // 三级评价: good=可正常运行, room=有提升空间, limited=运行受限
+  var LEVEL_MAP = { good: '可正常运行', room: '有提升空间', limited: '运行受限,建议升级' };
+  var COLOR_MAP = { good: '#34c759', room: '#ff9500', limited: '#ff3b30' };
+  var overallText = LEVEL_MAP[bn.overall] || '可正常运行';
+  document.getElementById('bnOverall').innerHTML = '总体: <strong style="color:' + (COLOR_MAP[bn.overall] || '#34c759') + '">' + overallText + '</strong>';
 
   var items = [
     { key: 'cpu', label: 'CPU 瓶颈' },
@@ -2244,8 +2264,8 @@ function renderBottleneck(bn) {
   items.forEach(function(item) {
     var data = bn[item.key];
     if (!data) return;
-    var levelText = { good: '正常', warn: '轻度', critical: '严重' }[data.level] || '正常';
-    var icon = data.level === 'good' ? '&#10004;' : (data.level === 'warn' ? '&#9888;' : '&#10060;');
+    var levelText = { good: '可正常运行', room: '有提升空间', limited: '运行受限' }[data.level] || '可正常运行';
+    var icon = data.level === 'good' ? '&#10004;' : (data.level === 'room' ? '&#9888;' : '&#10060;');
     html += '<div class="bn-card ' + data.level + '">';
     html += '<div class="bn-title">' + icon + ' ' + item.label + '</div>';
     html += '<div class="bn-value ' + data.level + '">' + levelText + '</div>';
