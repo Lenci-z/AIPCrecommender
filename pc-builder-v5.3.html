@@ -419,7 +419,7 @@ body.mouse-mode .step-pick-card .scenario-card:hover { transform:translateY(-2px
           <thead><tr><th>配件</th><th>型号</th><th style="text-align:right;">价格</th></tr></thead>
           <tbody id="priceBreakdownBody"><tr><td>CPU</td><td style="font-size:12px;color:#555;">AMD Ryzen 9 9900X</td><td style="text-align:right;font-weight:600;">¥3,299</td></tr><tr><td>GPU</td><td style="font-size:12px;color:#555;">NVIDIA RTX 3050 6G</td><td style="text-align:right;font-weight:600;">¥1,499</td></tr><tr><td>主板</td><td style="font-size:12px;color:#555;">技嘉 B850M GAMING</td><td style="text-align:right;font-weight:600;">¥1,199</td></tr><tr><td>内存</td><td style="font-size:12px;color:#555;">DDR5 16GB 7200MHz XMP</td><td style="text-align:right;font-weight:600;">¥599</td></tr><tr><td>存储</td><td style="font-size:12px;color:#555;">NVMe SSD 512GB</td><td style="text-align:right;font-weight:600;">¥299</td></tr><tr><td>散热</td><td style="font-size:12px;color:#555;">风冷 双塔六热管</td><td style="text-align:right;font-weight:600;">¥149</td></tr><tr><td>电源</td><td style="font-size:12px;color:#555;">550W 80+ Bronze</td><td style="text-align:right;font-weight:600;">¥299</td></tr><tr><td>机箱</td><td style="font-size:12px;color:#555;">经济型机箱 (M-ATX)</td><td style="text-align:right;font-weight:600;">¥149</td></tr><tr class="total-row"><td style="font-weight:600;">合计</td><td></td><td style="text-align:right;font-weight:700;color:#0071e3;font-size:16px;">¥7,492</td></tr></tbody>
         </table>
-        <div class="budget-bar-wrap" style="padding:12px 0 4px;">
+        <div class="budget-bar-wrap" id="budgetBarWrap" style="padding:12px 0 4px;">
           <div style="display:flex;justify-content:space-between;font-size:11px;color:#86868b;margin-bottom:6px;">
             <span>已花费: <strong id="spentDisplay">¥7,492</strong></span>
             <span id="remainDisplay">预算: ¥15,000</span>
@@ -429,6 +429,15 @@ body.mouse-mode .step-pick-card .scenario-card:hover { transform:translateY(-2px
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Current Configuration Performance (Apple + Office) -->
+    <div class="result-section" id="currentPerfSection" style="display:none;">
+      <div class="section-header">
+        <h2 id="currentPerfTitle">&#63743; 全场景性能评估</h2>
+        <span class="section-sub" id="currentPerfSub"></span>
+      </div>
+      <div id="currentPerfBody"></div>
     </div>
 
     <!-- Bottleneck Analysis -->
@@ -1923,7 +1932,12 @@ function renderStep3(build) {
 
   // --- Labels ---
   document.getElementById('step3ScenarioLabel').textContent = cfg.label;
-  document.getElementById('step3BudgetLabel').textContent = '\u00a5' + budget.toLocaleString();
+  if (sc !== 'apple') {
+    document.getElementById('step3BudgetLabel').textContent = '\u00a5' + budget.toLocaleString();
+    document.getElementById('step3BudgetLabel').style.display = '';
+  } else {
+    document.getElementById('step3BudgetLabel').style.display = 'none';
+  }
 
   // --- Warnings ---
   var warnDiv = document.getElementById('step3Warnings');
@@ -1961,7 +1975,7 @@ function renderStep3(build) {
       perfHtml += '<div class="perf-card"><div class="p-label">' + m.label + '</div><div class="p-value ' + m.cls + '">' + m.value + '</div></div>';
     });
     perfGrid.innerHTML = perfHtml;
-    document.getElementById('step3PerfNote').textContent = 'Mac Studio \u7edf\u4e00\u5185\u5b58\u67b6\u6784 | AI\u521b\u4f5c\u4e0e\u591a\u5a92\u4f53\u7f16\u8f91\u4f73\u9009';
+    document.getElementById('step3PerfNote').textContent = 'MacBook / Mac Studio \u7edf\u4e00\u5185\u5b58\u67b6\u6784 | \u5168\u573a\u666f\u6027\u80fd\u4f53\u9a8c';
   } else {
     var perfMetrics = [
       { label: '\u7efc\u5408\u6027\u80fd', value: (s.performanceScore || 0) + '/100', cls: perfGrade },
@@ -2018,13 +2032,18 @@ function renderStep3(build) {
   pbHtml += '<tr class="total-row"><td style="font-weight:600;">\u5408\u8ba1</td><td></td><td style="text-align:right;font-weight:700;color:#0071e3;font-size:16px;">\u00a5' + totalPrice.toLocaleString() + '</td></tr>';
   document.getElementById('priceBreakdownBody').innerHTML = pbHtml;
 
-  // --- Budget Bar ---
-  document.getElementById('spentDisplay').textContent = '\u00a5' + totalPrice.toLocaleString();
-  document.getElementById('remainDisplay').textContent = '\u9884\u7b97: \u00a5' + budget.toLocaleString();
-  var pct = Math.min(100, Math.round(totalPrice / budget * 100));
-  document.getElementById('budgetFill').style.width = pct + '%';
-  document.getElementById('budgetFill').style.background = pct > 100 ? '#ff3b30' : '#0071e3';
-  document.getElementById('step3BudgetInfo').textContent = '\u9884\u7b97\u4f7f\u7528\u7387: ' + pct + '% | ' + (pct > 100 ? '\u8d85\u51fa\u9884\u7b97 \u00a5' + (totalPrice - budget).toLocaleString() : '\u5269\u4f59 \u00a5' + (budget - totalPrice).toLocaleString());
+  // --- Budget Bar (hidden for Apple — fixed-price products, no budget constraint) ---
+  if (sc !== 'apple') {
+    document.getElementById('spentDisplay').textContent = '\u00a5' + totalPrice.toLocaleString();
+    document.getElementById('remainDisplay').textContent = '\u9884\u7b97: \u00a5' + budget.toLocaleString();
+    var pct = Math.min(100, Math.round(totalPrice / budget * 100));
+    document.getElementById('budgetFill').style.width = pct + '%';
+    document.getElementById('budgetFill').style.background = pct > 100 ? '#ff3b30' : '#0071e3';
+    document.getElementById('step3BudgetInfo').textContent = '\u9884\u7b97\u4f7f\u7528\u7387: ' + pct + '% | ' + (pct > 100 ? '\u8d85\u51fa\u9884\u7b97 \u00a5' + (totalPrice - budget).toLocaleString() : '\u5269\u4f59 \u00a5' + (budget - totalPrice).toLocaleString());
+    document.getElementById('budgetBarWrap').style.display = '';
+  } else {
+    document.getElementById('budgetBarWrap').style.display = 'none';
+  }
 
   // --- Bottleneck ---
   if (sc !== 'apple') {
@@ -2038,6 +2057,9 @@ function renderStep3(build) {
   renderBenchmark(build);
   renderBenchmarkProd(build);
   renderBenchmarkAI(build);
+  
+  // --- Current Performance Overview (Apple shows all 4 scenarios; Office shows office perf) ---
+  renderCurrentPerf(build);
 
   // Scroll to top (only when called from step navigation, not from onchange side effects)
   if (goStep._active) window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -4194,7 +4216,7 @@ function renderBenchmarkAI(build) {
 // ---- Current Build Performance Summary (compact, shown below build table) ----
 function renderCurrentPerf(build) {
   var section = document.getElementById('currentPerfSection');
-  if (!section) return; // removed in v5.3 step wizard
+  if (!section) return;
   var body = document.getElementById('currentPerfBody');
   var title = document.getElementById('currentPerfTitle');
   var sub = document.getElementById('currentPerfSub');
