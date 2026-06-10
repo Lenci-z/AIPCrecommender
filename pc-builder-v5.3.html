@@ -709,6 +709,22 @@ var DB = {
     { id:'MI325X', name:'AMD Instinct MI325X', brand:'amd', type:'compute', vram:288, gpuCores:22000, aiTOPS:3200, hbm:'HBM3E', memBW:6000, tdp:750, aiScore:130000, price:89999, note:'下一代AI计算', official:true, source:'amd', launchPrice:129999, launchDate:'2025-10' },
     { id:'MI400', name:'AMD Instinct MI400', brand:'amd', type:'compute', vram:432, gpuCores:32000, aiTOPS:5000, hbm:'HBM4', memBW:8000, tdp:1000, aiScore:200000, price:179999, note:'旗舰AI 432GB HBM4', official:true, source:'amd', launchPrice:229999, launchDate:'2026-06' },
     // ======= Apple Silicon (国行自营) =======
+    // --- MacBook Air M5 (2026, 国行) ---
+    { id:'MBA13-M5-BASE', name:'Apple M5 (10核CPU/8核GPU)', brand:'apple', type:'soc', cpuCores:10, cpuPerf:4, cpuEff:6, gpuCores:8, neural:16, unifiedMem:16, memBW:120, tdp:15, aiTOPS:18, aiScore:15000, gameScore:7000, price:8499, note:'MacBook Air 13" M5 标配', official:true, source:'apple+jd', launchPrice:8499, launchDate:'2026-03', officialName:'MacBook Air 13" M5 (10+8核/16GB/512GB)' },
+    { id:'MBA13-M5-MID', name:'Apple M5 (10核CPU/10核GPU)', brand:'apple', type:'soc', cpuCores:10, cpuPerf:4, cpuEff:6, gpuCores:10, neural:16, unifiedMem:24, memBW:120, tdp:15, aiTOPS:20, aiScore:16000, gameScore:7500, price:9999, note:'MacBook Air 13" M5 高配', official:true, source:'apple+jd', launchPrice:9999, launchDate:'2026-03', officialName:'MacBook Air 13" M5 (10+10核/24GB/512GB)' },
+    { id:'MBA15-M5-BASE', name:'Apple M5 (10核CPU/10核GPU)', brand:'apple', type:'soc', cpuCores:10, cpuPerf:4, cpuEff:6, gpuCores:10, neural:16, unifiedMem:16, memBW:120, tdp:15, aiTOPS:20, aiScore:16500, gameScore:7800, price:9999, note:'MacBook Air 15" M5 标配', official:true, source:'apple+jd', launchPrice:9999, launchDate:'2026-03', officialName:'MacBook Air 15" M5 (10+10核/16GB/512GB)' },
+    { id:'MBA15-M5-MID', name:'Apple M5 (10核CPU/10核GPU)', brand:'apple', type:'soc', cpuCores:10, cpuPerf:4, cpuEff:6, gpuCores:10, neural:16, unifiedMem:24, memBW:120, tdp:15, aiTOPS:20, aiScore:17500, gameScore:8000, price:11499, note:'MacBook Air 15" M5 高配', official:true, source:'apple+jd', launchPrice:11499, launchDate:'2026-03', officialName:'MacBook Air 15" M5 (10+10核/24GB/1TB)' },
+    // --- MacBook Pro 14" M5 (2025-2026) ---
+    { id:'MBP14-M5-BASE', name:'Apple M5 (10核CPU/10核GPU)', brand:'apple', type:'soc', cpuCores:10, cpuPerf:4, cpuEff:6, gpuCores:10, neural:16, unifiedMem:16, memBW:150, tdp:35, aiTOPS:20, aiScore:20000, gameScore:10000, price:12999, note:'MacBook Pro 14" M5 标配', official:true, source:'apple+jd', launchPrice:12999, launchDate:'2025-11', officialName:'MacBook Pro 14" M5 (10+10核/16GB/512GB)' },
+    { id:'MBP14-M5-HIGH', name:'Apple M5 (10核CPU/10核GPU)', brand:'apple', type:'soc', cpuCores:10, cpuPerf:4, cpuEff:6, gpuCores:10, neural:16, unifiedMem:24, memBW:150, tdp:35, aiTOPS:20, aiScore:21000, gameScore:10500, price:15999, note:'MacBook Pro 14" M5 高配', official:true, source:'apple+jd', launchPrice:15999, launchDate:'2025-11', officialName:'MacBook Pro 14" M5 (10+10核/24GB/1TB)' },
+    { id:'MBP14-M5P-BASE', name:'Apple M5 Pro (15核CPU/16核GPU)', brand:'apple', type:'soc', cpuCores:15, cpuPerf:8, cpuEff:7, gpuCores:16, neural:16, unifiedMem:24, memBW:300, tdp:45, aiTOPS:25, aiScore:28000, gameScore:13500, price:17999, note:'MacBook Pro 14" M5 Pro 标配', official:true, source:'apple+jd', launchPrice:17999, launchDate:'2026-03', officialName:'MacBook Pro 14" M5 Pro (15+16核/24GB/1TB)' },
+    // --- MacBook Pro 16" M5 Pro/Max (2026) ---
+    { id:'MBP16-M5P-BASE', name:'Apple M5 Pro (15核CPU/16核GPU)', brand:'apple', type:'soc', cpuCores:15, cpuPerf:8, cpuEff:7, gpuCores:16, neural:16, unifiedMem:24, memBW:300, tdp:55, aiTOPS:25, aiScore:29000, gameScore:14000, price:21999, note:'MacBook Pro 16" M5 Pro 标配', official:true, source:'apple+jd', launchPrice:21999, launchDate:'2026-03', officialName:'MacBook Pro 16" M5 Pro (15+16核/24GB/1TB)' },
+    // --- MacBook Pro 14" M5 Max (2026) ---
+    { id:'MBP14-M5M-HIGH', name:'Apple M5 Max (18核CPU/32核GPU)', brand:'apple', type:'soc', cpuCores:18, cpuPerf:10, cpuEff:8, gpuCores:32, neural:32, unifiedMem:36, memBW:400, tdp:60, aiTOPS:30, aiScore:35000, gameScore:17000, price:29999, note:'MacBook Pro 14" M5 Max 高配', official:true, source:'apple+jd', launchPrice:29999, launchDate:'2026-03', officialName:'MacBook Pro 14" M5 Max (18+32核/36GB/2TB)' },
+    // --- MacBook Pro 16" M5 Max (2026) ---
+    { id:'MBP16-M5M-HIGH', name:'Apple M5 Max (18核CPU/40核GPU)', brand:'apple', type:'soc', cpuCores:18, cpuPerf:10, cpuEff:8, gpuCores:40, neural:32, unifiedMem:48, memBW:400, tdp:80, aiTOPS:35, aiScore:38000, gameScore:18000, price:31999, note:'MacBook Pro 16" M5 Max 高配', official:true, source:'apple+jd', launchPrice:31999, launchDate:'2026-03', officialName:'MacBook Pro 16" M5 Max (18+40核/48GB/2TB)' },
+    // --- Mac Studio (2025) ---
     { id:'M4-MAX-14-32', name:'Apple M4 Max (14核CPU/32核GPU)', brand:'apple', type:'soc', cpuCores:14, cpuPerf:10, cpuEff:4, gpuCores:32, neural:16, unifiedMem:36, memBW:410, aiTOPS:38, aiScore:28000, gameScore:12000, price:16499, note:'入门Mac Studio', official:true, source:'apple+jd', launchPrice:16499, launchDate:'2025-03', officialName:'Mac Studio M4 Max 标配' },
     { id:'M4-MAX-16-40', name:'Apple M4 Max (16核CPU/40核GPU)', brand:'apple', type:'soc', cpuCores:16, cpuPerf:12, cpuEff:4, gpuCores:40, neural:16, unifiedMem:64, memBW:546, aiTOPS:44, aiScore:32000, gameScore:13500, price:22999, note:'高配M4 Max', official:true, source:'apple+jd', launchPrice:22999, launchDate:'2025-03', officialName:'Mac Studio M4 Max 高配' },
     { id:'M3-ULTRA-28-60', name:'Apple M3 Ultra (28核CPU/60核GPU)', brand:'apple', type:'soc', cpuCores:28, cpuPerf:20, cpuEff:8, gpuCores:60, neural:32, unifiedMem:96, memBW:819, aiTOPS:52, aiScore:38000, gameScore:16000, price:32999, note:'高端Mac Studio', official:true, source:'apple+jd', launchPrice:32999, launchDate:'2025-03', officialName:'Mac Studio M3 Ultra 标配' },
@@ -792,7 +808,7 @@ var scenarioConfig = {
     cpuBottleneckRatio: 0.03, gpuBottleneckRatio: 0.03
   },
   apple: {
-    label: 'Apple 生态方案', note: 'Mac Studio / 统一内存 / 闭环体验',
+    label: 'Apple 生态方案', note: 'MacBook / Mac Studio / 统一内存 / 闭环体验',
     weightCPU: 30, weightGPU: 30, weightRAM: 25, weightStorage: 10, weightOther: 5,
     ramMinGB: 36, ramPreferGen: 'ddr5', ramPreferFreq: 5400,
     gpuMinScore: 0, cpuMinScore: 0,
@@ -1893,7 +1909,7 @@ function renderStep3(build) {
       { label: '综合AI评分', value: (s.performanceScore || 0) + '/100', cls: perfGrade },
       { label: '统一内存', value: (s.ramCapacity || 0) + 'GB', cls: 'blue' },
       { label: '总价', value: '\u00a5' + (s.totalPrice || 0).toLocaleString(), cls: 'blue' },
-      { label: '神经网络引擎', value: (build.parts.cpu && build.parts.cpu.cores) + '\u6838', cls: 'green' }
+      { label: '神经网络引擎', value: ((build.appleSelected && build.appleSelected.neural) || (build.parts.cpu && build.parts.cpu.cores) || 0) + '\u6838', cls: 'green' }
     ];
     var perfHtml = '';
     perfMetrics.forEach(function(m) {
