@@ -233,7 +233,7 @@ body.mouse-mode .step-pick-card .scenario-card:hover { transform:translateY(-2px
     <div class="controls" id="mainControls" style="padding:0;border:none;box-shadow:none;background:transparent;">
       <!-- Budget -->
       <div class="control-group" style="margin-bottom:16px;">
-        <label>预算 (仅主机，不含外设) — <span id="budgetTier" style="color:#0071e3;font-weight:600;">高性能¥15K</span><span id="budgetRangeHint" style="font-size: 10px; color: rgb(134, 134, 139); margin-left: 8px;"></span></label>
+        <label>预算 (仅主机，不含外设) — <span id="budgetTier" style="color:#0071e3;font-weight:600;">主流¥8K</span><span id="budgetRangeHint" style="font-size: 10px; color: rgb(134, 134, 139); margin-left: 8px;"></span></label>
         <div style="display:flex;align-items:center;gap:8px;">
           <input type="range" id="budgetSlider" min="3000" max="50000" step="500" value="8000" oninput="syncBudget(&#39;slider&#39;)" style="flex: 1 1 0%; min-width: 120px; accent-color: rgb(0, 113, 227);">
           <input type="number" id="budgetInput" value="8000" min="1000" step="500" oninput="syncBudget(&#39;input&#39;)" style="width:100px;padding:6px 10px;border:1px solid #d2d2d7;border-radius:8px;font-size:14px;text-align:right;outline:none;" onfocus="this.select()">
@@ -1097,10 +1097,13 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
     build.parts.psu = { name: '内置电源', wattage: 300, price: 0, note: '集成' };
     build.parts.case = { name: 'Mac Studio', price: 0, note: 'Apple设计' };
     build.isApple = true;
+    // Detect if this is a MacBook (has built-in screen+keyboard) or Mac Studio
+    var isMacBook = apple.note && apple.note.indexOf('MacBook') >= 0;
     usedBudget = apple.price;
     
-    // Apple: add monitor/keyboard/mouse (always full mode)
-    var remaining = budget - usedBudget;
+    // Apple: add monitor/keyboard/mouse (only for Mac Studio, MacBooks have them built-in)
+    if (!isMacBook) {
+      var remaining = budget - usedBudget;
       // Monitor: prioritize Apple Studio Display, then fallback to other brands
       var appleMons = DB.monitor.filter(function(m) { return m.brand === 'apple' && officialFilter(m); });
       var monitorPool2 = appleMons.length > 0 ? appleMons : DB.monitor.slice().filter(function(m) {
@@ -1129,6 +1132,7 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
       if (msPoolA.length === 0) msPoolA = DB.mouse;
       build.parts.mouse = msPoolA[0];
       usedBudget += msPoolA[0].price || 0;
+    }
     
     build.totalPrice = usedBudget;
     build.totalTDP = 170;
@@ -1210,6 +1214,12 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
   }
   build.parts.mb = mb;
   usedBudget += mb.price;
+  
+  // If ECC was requested but selected motherboard doesn't support it, disable ECC for RAM/storage
+  var mbEccUnavailable = wantECC && mb && !mb.ecc;
+  if (mbEccUnavailable) {
+    build.warnings.push('所选主板(' + mb.name + ')不支持ECC，已降级为非ECC内存');
+  }
 
   // ---- GPU ----
   var gpuPool = DB.gpu.filter(function(g) {
@@ -1259,7 +1269,8 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
   var ramPool = DB.ram.filter(function(r) {
     if (state.ramBrand !== 'auto' && r.brand !== state.ramBrand) return false;
     if (r.gen !== ddrGen) return false;
-    if (wantECC && !r.ecc) return false;
+    // Skip ECC requirement if motherboard doesn't support it
+    if (wantECC && !mbEccUnavailable && !r.ecc) return false;
     if (!officialFilter(r)) return false;
     return true;
   });
@@ -1945,7 +1956,9 @@ function renderStep3(build) {
   var pbItems = [];
   if (sc === 'apple' && build.isApple) {
     var apple = build.appleSelected || {};
-    pbItems.push({ cat: 'Mac Studio', model: apple.name || 'Mac Studio', price: apple.price || 0 });
+    var isMacBook = apple.note && apple.note.indexOf('MacBook') >= 0;
+    var deviceCat = isMacBook ? 'MacBook' : 'Mac Studio';
+    pbItems.push({ cat: deviceCat, model: apple.officialName || apple.name || deviceCat, price: apple.price || 0 });
   } else {
     var cats = [
       { cat: 'CPU', part: parts.cpu },
@@ -2172,6 +2185,13 @@ function findUpgradeOptions(key, data) {
   var currentParts = currentBuild ? currentBuild.parts : null;
   var opts = [];
   
+  // Budget cap: max total price after upgrade = state.budget * 1.3 (30% flex)
+  var maxTotal = state.budget * 1.3;
+  function withinBudget(partPrice, oldPrice) {
+    var newTotal = currentBuild.totalPrice - oldPrice + partPrice;
+    return newTotal <= maxTotal;
+  }
+  
   if (key === 'cpu' && currentParts && currentParts.cpu) {
     var cur = currentParts.cpu;
     var pool = DB.cpu.filter(function(c) {
@@ -2183,7 +2203,7 @@ function findUpgradeOptions(key, data) {
     });
     pool.sort(function(a,b) { return scoreCPU(b, state.scenario) - scoreCPU(a, state.scenario); });
     for (var i = 0; i < pool.length && opts.length < 3; i++) {
-      if (pool[i].id !== cur.id) {  // Allow any different CPU, not just more expensive
+      if (pool[i].id !== cur.id && withinBudget(pool[i].price, cur.price)) {
         var p = pool[i];
         opts.push({ name: p.name, price: p.price, diff: p.price - cur.price, id: p.id });
       }
@@ -2201,7 +2221,7 @@ function findUpgradeOptions(key, data) {
     });
     pool.sort(function(a,b) { return scoreGPU(b, state.scenario) - scoreGPU(a, state.scenario); });
     for (var i = 0; i < pool.length && opts.length < 3; i++) {
-      if (pool[i].id !== cur.id) {  // Allow any different GPU
+      if (pool[i].id !== cur.id && withinBudget(pool[i].price, cur.price)) {
         var p = pool[i];
         opts.push({ name: p.name, price: p.price, diff: p.price - cur.price, id: p.id });
       }
@@ -2212,13 +2232,12 @@ function findUpgradeOptions(key, data) {
     var cur = currentParts.ram;
     var needECC = state.scenario === 'workstation' || state.scenario === 'productivity';
     var pool = DB.ram.filter(function(r) { return offFilt(r) && r.gen === cur.gen && (!needECC || r.ecc || !scenarioConfig[state.scenario].needECC); });
-    // Sort: ECC first for workstation, then by capacity*freq
     pool.sort(function(a,b) {
       if (needECC && a.ecc !== b.ecc) return a.ecc ? -1 : 1;
       return (b.capacity * b.freq) - (a.capacity * a.freq);
     });
     for (var i = 0; i < pool.length && opts.length < 3; i++) {
-      if (pool[i].id !== cur.id) {
+      if (pool[i].id !== cur.id && withinBudget(pool[i].price, cur.price)) {
         var p = pool[i];
         opts.push({ name: p.name, price: p.price, diff: p.price - cur.price, id: p.id });
       }
@@ -2228,9 +2247,9 @@ function findUpgradeOptions(key, data) {
   if (key === 'storage' && currentParts && currentParts.storage) {
     var cur = currentParts.storage;
     var pool = DB.storage.filter(function(s) { return offFilt(s); });
-    pool.sort(function(a,b) { return (b.seqRead || 0) - (a.seqRead || 0); }); // Sort by speed, not capacity
+    pool.sort(function(a,b) { return (b.seqRead || 0) - (a.seqRead || 0); });
     for (var i = 0; i < pool.length && opts.length < 3; i++) {
-      if (pool[i].id !== cur.id) {
+      if (pool[i].id !== cur.id && withinBudget(pool[i].price, cur.price)) {
         var p = pool[i];
         opts.push({ name: p.name, price: p.price, diff: p.price - cur.price, id: p.id });
       }
@@ -2555,9 +2574,12 @@ function renderBuildTable(build) {
   var items = [];
 
   if (build.isApple) {
-    // Apple: show Mac Studio as single item + peripherals
+    // Apple: show the selected model as single item + optional peripherals
     var apple = build.appleSelected || {};
-    items.push({ cat: 'Mac Studio', part: { name: apple.name || 'Mac Studio', price: apple.price || 0, note: apple.cpuCores + '核CPU / ' + apple.gpuCores + '核GPU / ' + (apple.unifiedMem||0) + 'GB统一内存', official: true } });
+    var isMacBook = apple.note && apple.note.indexOf('MacBook') >= 0;
+    var deviceCat = isMacBook ? 'MacBook' : 'Mac Studio';
+    var deviceNote = apple.cpuCores + '核CPU / ' + apple.gpuCores + '核GPU / ' + (apple.unifiedMem||0) + 'GB统一内存';
+    items.push({ cat: deviceCat, part: { name: apple.officialName || apple.name || deviceCat, price: apple.price || 0, note: deviceNote, official: true } });
     if (parts.monitor) items.push({ cat: '显示器', part: parts.monitor });
     if (parts.keyboard) items.push({ cat: '键盘', part: parts.keyboard });
     if (parts.mouse) items.push({ cat: '鼠标', part: parts.mouse });
@@ -5036,8 +5058,8 @@ var priceDb = {};
 // Build price history database
 priceDb = buildPriceDb();
 rebuild();
-// Initialize budget display & preset highlights on page load
-setTimeout(function() { syncBudget('slider'); }, 100);
+// Initialize budget display & preset highlights (immediately, not in setTimeout)
+syncBudget('slider');
 // Price chart selector is loaded on-demand in v5.3 (step wizard)
 try { populatePriceSelector(); } catch(e) {}
 
