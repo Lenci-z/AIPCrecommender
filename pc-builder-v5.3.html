@@ -82,8 +82,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .ecc-badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; background: #e8f5e9; color: #2e7d32; margin-left: 4px; }
 .mem-type { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; margin-left: 4px; }
 .mem-type.ddr5 { background: #e3f2fd; color: #1565c0; }
-.apple-model-card { transition: all 0.2s ease; }
-.apple-model-card:hover { box-shadow: 0 4px 12px rgba(0,113,227,0.2); transform: translateY(-2px); border-color: #0071e3 !important; }
+.apple-model-card { transition: all 0.2s ease; cursor: pointer; }
+.apple-model-card:hover { box-shadow: 0 4px 12px rgba(0,113,227,0.2); transform: translateY(-2px); }
+.apple-model-card.selected { border-color: #0071e3 !important; background: #f0f7ff !important; }
 .mem-type.ddr4 { background: #f3e5f5; color: #7b1fa2; }
 
 @media (max-width: 768px) {
@@ -1579,7 +1580,11 @@ function goStep(n) {
     el.classList.toggle('active', stepNum === n);
     el.classList.toggle('done', stepNum < n);
   });
-  if (n === 1) window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (n === 1) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Re-sync highlight with current state when coming back to Step 1
+    highlightCard(state.scenario || 'gaming');
+  }
   goStep._active = false; // reset flag
 }
 
@@ -1589,9 +1594,12 @@ var scenarioList = ['gaming', 'productivity', 'ai', 'office'];
 
 function highlightCard(s) {
   state.scenario = s;
+  // Explicitly remove active from ALL scenario cards, then add to matching one
   document.querySelectorAll('.scenario-card').forEach(function(el) {
-    el.classList.toggle('active', el.dataset.scenario === s);
+    el.classList.remove('active');
   });
+  var match = document.querySelector('.scenario-card[data-scenario="' + s + '"]');
+  if (match) match.classList.add('active');
   // Apple entry: deselect if a PC scenario is chosen
   var appleEntry = document.getElementById('appleEntry');
   if (s === 'apple') {
@@ -1980,7 +1988,8 @@ function renderAppleCompare() {
     var border = isSelected ? '2px solid #0071e3' : '0.5px solid #e8e8ed';
     var bg = isSelected ? '#f0f7ff' : '#fff';
     
-    html += '<div class="apple-model-card" onclick="setAppleModel(\'' + m.id + '\')" style="cursor:pointer;border:' + border + ';border-radius:12px;background:' + bg + ';padding:14px;position:relative;">';
+    var selClass = isSelected ? ' apple-model-card selected' : '';
+    html += '<div class="apple-model-card' + selClass + '" onclick="setAppleModel(\'' + m.id + '\')" style="border-radius:12px;padding:14px;position:relative;">';
     if (isSelected) html += '<div style="position:absolute;top:8px;right:8px;font-size:10px;background:#0071e3;color:#fff;padding:2px 8px;border-radius:6px;">\u5f53\u524d\u9009\u62e9</div>';
     html += '<div style="font-size:13px;font-weight:600;margin-bottom:8px;">' + (m.officialName || m.name) + '</div>';
     html += '<table style="width:100%;font-size:11px;border-collapse:collapse;">';
@@ -2302,45 +2311,58 @@ function undoAllAppleUpgrades() {
 
 // Apple model picker - swap to selected model
 function setAppleModel(modelId) {
-  // Find the model from database directly (no dependency on currentBuild)
-  if (!currentBuild) return;
+  // Always find the model first (don't early-return on null currentBuild)
   var model = null;
   var appleModels = DB.compute.filter(function(a) { return a.brand === 'apple'; });
   for (var i = 0; i < appleModels.length; i++) {
     if (appleModels[i].id === modelId) { model = appleModels[i]; break; }
   }
   if (!model) return;
-  
-  // If currentBuild doesn't have Apple data, rebuild from scratch
+
+  // If currentBuild is null, initialize it
+  if (!currentBuild) {
+    currentBuild = { parts: {}, summary: {}, appleModels: appleModels, isApple: true };
+  }
+
+  // If currentBuild doesn't have Apple data, build from scratch
   if (!currentBuild.appleSelected) {
-    var appleBuyNow = { parts: { cpu:{}, gpu:{}, ram:{}, storage:{}, monitor:{}, keyboard:{}, mouse:{} }, summary: {} };
-    appleBuyNow.appleSelected = model;
-    appleBuyNow.appleModels = appleModels;
-    appleBuyNow.totalPrice = model.price;
-    appleBuyNow.totalTDP = 170;
-    appleBuyNow.performanceScore = Math.round(Math.min(100, model.aiScore / 1200 + model.unifiedMem / 4));
-    appleBuyNow.summary = {
-      totalPrice: model.price, remaining: 0, performanceScore: appleBuyNow.performanceScore,
-      pricePerformance: Math.round(appleBuyNow.performanceScore * 1000 / model.price * 10) / 10,
+    currentBuild = {
+      parts: { cpu:{}, gpu:{}, ram:{}, storage:{}, monitor:{}, keyboard:{}, mouse:{} },
+      summary: {}, appleModels: appleModels, isApple: true
+    };
+    currentBuild.appleSelected = model;
+    currentBuild.totalPrice = model.price;
+    currentBuild.totalTDP = 170;
+    currentBuild.performanceScore = Math.round(Math.min(100, model.aiScore / 1200 + model.unifiedMem / 4));
+    currentBuild.summary = {
+      totalPrice: model.price, remaining: 0, performanceScore: currentBuild.performanceScore,
+      pricePerformance: Math.round(currentBuild.performanceScore * 1000 / model.price * 10) / 10,
       totalTDP: 170, gpuVRAM: model.unifiedMem, cpuCores: model.cpuCores,
       ramCapacity: model.unifiedMem, storageCapacity: 1024, cpuModel: model.name,
-      gpuModel: '\u96c6\u6210GPU', ramModel: model.unifiedMem+'GB \u7edf\u4e00\u5185\u5b58',
-      ramECC: false, ramFreq: Math.round(model.memBW/1024), ramGen: '\u7edf\u4e00'
+      gpuModel: '集成GPU', ramModel: model.unifiedMem+'GB 统一内存',
+      ramECC: false, ramFreq: Math.round(model.memBW/1024), ramGen: '统一'
     };
-    appleBuyNow.parts.cpu = { name: model.name };
-    appleBuyNow.parts.gpu = { name: '\u96c6\u6210GPU', vram: model.unifiedMem, gpuCores: model.gpuCores };
-    appleBuyNow.parts.ram = { name: model.unifiedMem+'GB \u7edf\u4e00\u5185\u5b58', capacity: model.unifiedMem };
-    appleBuyNow.parts.storage = { name: '1TB SSD' };
-    appleBuyNow.pricePerformance = appleBuyNow.summary.pricePerformance;
-    appleBuyNow.isApple = true;
-    currentBuild = appleBuyNow;
-    // Re-render Apple model grid to update highlight
+    currentBuild.parts.cpu = { name: model.name };
+    currentBuild.parts.gpu = { name: '集成GPU', vram: model.unifiedMem, gpuCores: model.gpuCores };
+    currentBuild.parts.ram = { name: model.unifiedMem+'GB 统一内存', capacity: model.unifiedMem };
+    currentBuild.parts.storage = { name: '1TB SSD' };
+    currentBuild.pricePerformance = currentBuild.summary.pricePerformance;
     renderAppleCompare();
-    // Navigate to Step 3
-    goStep(3);
+    // Directly render Step 3 without going through goStep(3)
+    renderStep3(currentBuild);
+    currentStep = 3;
+    document.querySelectorAll('.step-content').forEach(function(el) {
+      el.classList.toggle('active', el.id === 'step3');
+    });
+    document.querySelectorAll('.step-item').forEach(function(el) {
+      var stepNum = parseInt(el.dataset.step);
+      el.classList.toggle('active', stepNum === 3);
+      el.classList.toggle('done', stepNum < 3);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     return;
   }
-  
+
   // Normal flow: currentBuild already has Apple data
   var oldPrice = currentBuild.appleSelected ? currentBuild.appleSelected.price : 0;
   currentBuild.appleSelected = model;
@@ -2354,22 +2376,34 @@ function setAppleModel(modelId) {
   currentBuild.performanceScore = currentBuild.summary.performanceScore;
   currentBuild.summary.pricePerformance = Math.round(currentBuild.performanceScore * 1000 / model.price * 10) / 10;
   currentBuild.parts.cpu.name = model.name;
-  currentBuild.parts.ram.name = model.unifiedMem+'GB \u7edf\u4e00\u5185\u5b58';
+  currentBuild.parts.ram.name = model.unifiedMem+'GB 统一内存';
   currentBuild.parts.ram.capacity = model.unifiedMem;
   currentBuild.parts.gpu.vram = model.unifiedMem;
   currentBuild.parts.gpu.gpuCores = model.gpuCores;
-  
+
   // Track price change
   if (oldPrice !== model.price) {
     appleUpgradeHistory.push({
-      type: 'apple', oldPart: '\u524d\u578b\u53f7', newPart: model.name,
+      type: 'apple', oldPart: '前型号', newPart: model.name,
       oldPrice: oldPrice, newPrice: model.price, diff: model.price - oldPrice
     });
   }
-  
-  // Re-render to update highlight in model grid, then navigate
+
+  // Re-render to update highlight in model grid, then show Step 3
   renderAppleCompare();
-  goStep(3);
+  // Directly render Step 3 without going through goStep(3) (which calls rebuild)
+  renderStep3(currentBuild);
+  // Show Step 3
+  currentStep = 3;
+  document.querySelectorAll('.step-content').forEach(function(el) {
+    el.classList.toggle('active', el.id === 'step3');
+  });
+  document.querySelectorAll('.step-item').forEach(function(el) {
+    var stepNum = parseInt(el.dataset.step);
+    el.classList.toggle('active', stepNum === 3);
+    el.classList.toggle('done', stepNum < 3);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ---- Summary ----
@@ -2437,11 +2471,10 @@ function renderSummary(build) {
     pickerHtml += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;">';
     build.appleModels.forEach(function(m) {
       var isSelected = build.appleSelected && build.appleSelected.id === m.id;
-      var border = isSelected ? '2px solid #0071e3' : '0.5px solid #d2d2d7';
-      var bg = isSelected ? '#f0f7ff' : '#fff';
       var badge = isSelected ? '<div style="position:absolute;top:-1px;right:-1px;background:#0071e3;color:#fff;font-size:9px;padding:2px 8px;border-radius:0 8px 0 8px;">已选</div>' : '';
       var inBudget = m.price <= state.budget;
-      pickerHtml += '<div class="apple-model-card" onclick="setAppleModel(\'' + m.id + '\')" style="position:relative;border:' + border + ';border-radius:10px;padding:12px;background:' + bg + ';cursor:pointer;' + (inBudget ? '' : 'opacity:0.5;') + '">' + badge;
+      var selClass = isSelected ? ' apple-model-card selected' : '';
+      pickerHtml += '<div class="apple-model-card' + selClass + '" onclick="setAppleModel(\'' + m.id + '\')" style="position:relative;border-radius:10px;padding:12px;cursor:pointer;' + (inBudget ? '' : 'opacity:0.5;') + '">' + badge;
       pickerHtml += '<div style="font-size:12px;font-weight:600;margin-bottom:4px;">' + m.note + '</div>';
       pickerHtml += '<div style="font-size:11px;color:#555;line-height:1.5;">';
       pickerHtml += m.cpuCores + '核CPU / ' + m.gpuCores + '核GPU<br>';
