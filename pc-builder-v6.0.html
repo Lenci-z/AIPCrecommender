@@ -794,7 +794,7 @@ var scenarioConfig = {
   ai: {
     label: 'AI 本地推理 / 绘图方案', note: '优先GPU VRAM、大容量内存与固态',
     weightCPU: 20, weightGPU: 50, weightRAM: 18, weightStorage: 7, weightOther: 5,
-    ramMinGB: 32, ramPreferGen: 'ddr5', ramPreferFreq: 5600,
+    ramMinGB: 64, ramPreferGen: 'ddr5', ramPreferFreq: 5600,
     gpuMinScore: 10000, cpuMinScore: 1800,
     monitorPrefer: 'high-res', storageMinGB: 1024,
     cpuBottleneckRatio: 0.05, gpuBottleneckRatio: 0.05
@@ -822,7 +822,7 @@ var scenarioConfig = {
 var SCENE_MIN = {
   ai: {
     "7B":  { gpuVRAM: 8,  ramGB: 16, storage: 1024, cpuCores: 6  },
-    "13B": { gpuVRAM: 12, ramGB: 32, storage: 1024, cpuCores: 8  },
+    "13B": { gpuVRAM: 12, ramGB: 64, storage: 1024, cpuCores: 8  },
     "34B": { gpuVRAM: 16, ramGB: 64, storage: 2048, cpuCores: 10 },
     "70B": { gpuVRAM: 24, ramGB: 64, storage: 2048, cpuCores: 12 }
   },
