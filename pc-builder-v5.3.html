@@ -2269,25 +2269,31 @@ function applyUpgrade(type, partId) {
   currentBuild.parts[type] = JSON.parse(JSON.stringify(newPart));
   currentBuild.totalPrice = currentBuild.totalPrice - oldPrice + newPrice;
   
-  // Recalculate budget bar
-  var pct = Math.min(100, Math.round(currentBuild.totalPrice / state.budget * 100));
-  document.getElementById('budgetFill').style.width = pct + '%';
-  if (pct > 100) document.getElementById('budgetFill').style.background = '#ff3b30';
-  else document.getElementById('budgetFill').style.background = '#0071e3';
+  // ===== Update summary to match new part =====
+  if (!currentBuild.summary) currentBuild.summary = {};
+  currentBuild.summary.totalPrice = currentBuild.totalPrice;
+  
+  if (type === 'cpu') {
+    currentBuild.summary.cpuModel = newPart.name;
+    currentBuild.summary.cpuCores = newPart.cores;
+  } else if (type === 'gpu') {
+    currentBuild.summary.gpuModel = newPart.name;
+    currentBuild.summary.gpuVRAM = newPart.vram;
+  } else if (type === 'ram') {
+    currentBuild.summary.ramCapacity = newPart.capacity;
+    currentBuild.summary.ramFreq = newPart.freq;
+    currentBuild.summary.ramGen = newPart.gen;
+    currentBuild.summary.ramECC = !!newPart.ecc;
+  } else if (type === 'storage') {
+    currentBuild.summary.storageCapacity = newPart.capacity;
+  }
   
   // Re-analyze bottlenecks
   currentBottleneck = analyzeBottleneck(currentBuild, state.scenario, state.budget);
   
-  // Re-render everything
+  // Re-render full Step 3 (covers performance grid, price breakdown, benchmarks, etc.)
+  renderStep3(currentBuild);
   renderBottleneck(currentBottleneck);
-  renderSummary(currentBuild);
-  renderBuildTable(currentBuild);
-  renderCurrentPerf(currentBuild);
-  renderBenchmark(currentBuild);
-  renderBenchmarkProd(currentBuild);
-  renderBenchmarkAI(currentBuild);
-  renderAllComponents();
-  renderUpgradeHistory();
 }
 
 // Render upgrade history banner
