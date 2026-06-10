@@ -635,11 +635,11 @@ var DB = {
     { id:'B760M-A', name:'华硕 TUF B760M-PLUS D4', brand:'asus', formFactor:'m-atx', chipset:'B760', socket:'LGA1700', ddr:'ddr4', ddrMax:128, ddrChannel:'dual', ddrSlot:4, pcie5:false, ecc:false, price:799, note:'经济Intel D4', reason:'保留DDR4兼容旧内存+TUF军规品质+B760主流芯片组，升级用户的省钱首选', official:true, source:'asus+jd' },
     { id:'B760M-M', name:'微星 MAG B760M MORTAR D4', brand:'msi', formFactor:'m-atx', chipset:'B760', socket:'LGA1700', ddr:'ddr4', ddrMax:128, ddrChannel:'dual', ddrSlot:4, pcie5:false, ecc:false, price:699, note:'主流D4', reason:'699元买一线品牌B760+D4，12代i5/i7的绝佳伴侣，二手市场也热门', official:true, source:'msi+jd' },
     { id:'X870E-A', name:'华硕 ROG X870E CROSSHAIR', brand:'asus', formFactor:'atx', chipset:'X870E', socket:'AM5', ddr:'ddr5', ddrMax:256, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:false, price:3599, note:'AMD旗舰', reason:'AMD顶级X870E+双PCIe5.0+20相110A供电，R9-9950X3D极限超频之选', official:true, source:'asus+jd' },
-    { id:'B850M-A', name:'华硕 TUF B850M-PLUS', brand:'asus', formFactor:'m-atx', chipset:'B850', socket:'AM5', ddr:'ddr5', ddrMax:256, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:true, price:1399, note:'AMD主流', reason:'B850中端标杆+支持ECC+PCIe5.0，R7/R9系列稳健之选，工作站也胜任', official:true, source:'asus+jd' },
+    { id:'B850M-A', name:'华硕 TUF B850M-PLUS', brand:'asus', formFactor:'m-atx', chipset:'B850', socket:'AM5', ddr:'ddr5', ddrMax:256, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:false, price:1399, note:'AMD主流', reason:'B850中端标杆+PCIe5.0+军规供电，R7/R9系列稳健之选', official:true, source:'asus+jd' },
     { id:'B850M-M', name:'微星 MAG B850M MORTAR', brand:'msi', formFactor:'m-atx', chipset:'B850', socket:'AM5', ddr:'ddr5', ddrMax:256, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:false, price:1299, note:'AMD主流D5', reason:'微星迫击炮家族AMD版，14+2相供电+EZ M.2+WiFi6E，口碑销量双冠', official:true, source:'msi+jd' },
     { id:'B850M-G', name:'技嘉 B850M GAMING', brand:'gigabyte', formFactor:'m-atx', chipset:'B850', socket:'AM5', ddr:'ddr5', ddrMax:256, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:false, price:1199, note:'AMD性价比', reason:'技嘉B850用料扎实+传感器精准+Ryzen 9000系列调优到位，性价比之选', official:true, source:'gigabyte+jd' },
-    { id:'B850M-AR', name:'华擎 B850M PRO RS', brand:'asrock', formFactor:'m-atx', chipset:'B850', socket:'AM5', ddr:'ddr5', ddrMax:256, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:true, price:1099, note:'AMD性价比', reason:'华擎PRO系列稳定可靠+价格最低的B850之一，追求AM5性价比的首选', official:true, source:'asrock+jd' },
-    { id:'A620M', name:'华硕 PRIME A620M-A', brand:'asus', formFactor:'m-atx', chipset:'A620', socket:'AM5', ddr:'ddr5', ddrMax:192, ddrChannel:'dual', ddrSlot:2, pcie5:false, ecc:true, price:649, note:'经济AMD', reason:'AM5最低门槛+支持ECC内存，R5系列办公/入门游戏的最佳省钱方案', official:true, source:'asus+jd' },
+    { id:'B850M-AR', name:'华擎 B850M PRO RS', brand:'asrock', formFactor:'m-atx', chipset:'B850', socket:'AM5', ddr:'ddr5', ddrMax:256, ddrChannel:'dual', ddrSlot:4, pcie5:true, ecc:false, price:1099, note:'AMD性价比', reason:'华擎PRO系列稳定可靠+价格最低的B850之一，追求AM5性价比的首选', official:true, source:'asrock+jd' },
+    { id:'A620M', name:'华硕 PRIME A620M-A', brand:'asus', formFactor:'m-atx', chipset:'A620', socket:'AM5', ddr:'ddr5', ddrMax:192, ddrChannel:'dual', ddrSlot:2, pcie5:false, ecc:false, price:649, note:'经济AMD', reason:'AM5最低门槛入门板，R5系列办公/入门游戏的最佳省钱方案', official:true, source:'asus+jd' },
     { id:'B550M-A', name:'华硕 TUF B550M-PLUS', brand:'asus', formFactor:'m-atx', chipset:'B550', socket:'AM4', ddr:'ddr4', ddrMax:128, ddrChannel:'dual', ddrSlot:4, pcie5:false, ecc:false, price:549, note:'AM4主流', reason:'AM4平台的最后辉煌，TUF B550稳如磐石+支持Ryzen 5000全系，老平台升级首选', official:false, source:'asus' },
     { id:'B550M-M', name:'微星 MAG B550M MORTAR', brand:'msi', formFactor:'m-atx', chipset:'B550', socket:'AM4', ddr:'ddr4', ddrMax:128, ddrChannel:'dual', ddrSlot:4, pcie5:false, ecc:false, price:499, note:'AM4性价比', reason:'AM4经典神板+迫击炮同级最强供电+R5-5600/5800X3D的最佳归宿', official:false, source:'msi' },
     // ======= Intel ECC Workstation =======
@@ -2368,7 +2368,9 @@ function findUpgradeOptions(key, data) {
   if (key === 'ram' && currentParts && currentParts.ram) {
     var cur = currentParts.ram;
     var needECC = (state.scenario === 'workstation' || state.scenario === 'productivity') && state.budget >= 10000;
-    var pool = DB.ram.filter(function(r) { return offFilt(r) && r.gen === cur.gen && (!needECC || r.ecc || !scenarioConfig[state.scenario].needECC); });
+    // Only recommend ECC RAM if the motherboard supports ECC
+    var mbSupportsECC = currentBuild && currentBuild.parts && currentBuild.parts.mb && currentBuild.parts.mb.ecc;
+    var pool = DB.ram.filter(function(r) { return offFilt(r) && r.gen === cur.gen && (!needECC || !mbSupportsECC || r.ecc || !scenarioConfig[state.scenario].needECC); });
     pool.sort(function(a,b) {
       if (needECC && a.ecc !== b.ecc) return a.ecc ? -1 : 1;
       return (b.capacity * b.freq) - (a.capacity * a.freq);
