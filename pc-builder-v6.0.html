@@ -776,15 +776,15 @@ var compFilters = {};
 
 var scenarioConfig = {
   gaming: {
-    label: '游戏方案', note: '优先GPU性能，CPU单核性能',
+    label: '游戏娱乐方案', note: '优先GPU性能、CPU单核性能',
     weightCPU: 25, weightGPU: 45, weightRAM: 10, weightStorage: 5, weightOther: 15,
     ramMinGB: 16, ramPreferGen: 'ddr5', ramPreferFreq: 6000,
-    gpuMinScore: 10000, cpuMinScore: 1800,
+    gpuMinScore: 8000, cpuMinScore: 1500,
     monitorPrefer: 'high-hz', storageMinGB: 1024,
     cpuBottleneckRatio: 0.07, gpuBottleneckRatio: 0.05
   },
   productivity: {
-    label: '生产力 / 工作站方案', note: '优先CPU多核、RAM容量、ECC支持',
+    label: '生产力方案', note: '优先CPU多核、RAM大容量，可选ECC工作站配置',
     weightCPU: 35, weightGPU: 25, weightRAM: 15, weightStorage: 10, weightOther: 15,
     ramMinGB: 32, ramPreferGen: 'ddr5', ramPreferFreq: 5600,
     gpuMinScore: 8000, cpuMinScore: 2000,
@@ -792,12 +792,12 @@ var scenarioConfig = {
     needECC: true, cpuBottleneckRatio: 0.04, gpuBottleneckRatio: 0.04
   },
   ai: {
-    label: 'AI / 深度学习方案', note: '优先GPU VRAM、RAM大容量',
+    label: 'AI 本地推理 / 绘图方案', note: '优先GPU VRAM、大容量内存与固态',
     weightCPU: 20, weightGPU: 50, weightRAM: 18, weightStorage: 7, weightOther: 5,
-    ramMinGB: 64, ramPreferGen: 'ddr5', ramPreferFreq: 5600,
-    gpuMinScore: 15000, cpuMinScore: 2200,
-    monitorPrefer: 'high-res', storageMinGB: 2048,
-    needECC: true, cpuBottleneckRatio: 0.03, gpuBottleneckRatio: 0.03
+    ramMinGB: 32, ramPreferGen: 'ddr5', ramPreferFreq: 5600,
+    gpuMinScore: 10000, cpuMinScore: 1800,
+    monitorPrefer: 'high-res', storageMinGB: 1024,
+    cpuBottleneckRatio: 0.05, gpuBottleneckRatio: 0.05
   },
   office: {
     label: '日常办公方案', note: '均衡配置，性价比优先',
@@ -1057,7 +1057,7 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
   var cfg = scenarioConfig[scenario];
   var build = { parts: {}, totalPrice: 0, totalTDP: 0, performanceScore: 0, summary: {}, warnings: [] };
   var usedBudget = 0;
-  var wantECC = cfg.needECC || (memPref === 'ecc');
+  var wantECC = (cfg.needECC || (memPref === 'ecc')) && budget >= 10000;
   var ddrOverride = memPref !== 'auto' && memPref !== 'ecc' ? memPref : null;
 
   // ======= APPLE ECOSYSTEM (独立选购) =======
