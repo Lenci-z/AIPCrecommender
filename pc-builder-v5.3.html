@@ -86,6 +86,7 @@ body.mouse-mode .scenario-card:hover { transform: translateY(-2px); }
 .apple-model-card { transition: all 0.2s ease; cursor: pointer; }
 .apple-model-card:hover { box-shadow: 0 4px 12px rgba(0,113,227,0.2); transform: translateY(-2px); }
 .apple-model-card.selected { border-color: #0071e3 !important; background: #f0f7ff !important; }
+.apple-model-card.key-focus { box-shadow: 0 0 0 3px #0071e3, 0 4px 12px rgba(0,113,227,0.18); transform: translateY(-2px); }
 .mem-type.ddr4 { background: #f3e5f5; color: #7b1fa2; }
 
 @media (max-width: 768px) {
@@ -1592,8 +1593,9 @@ function goStep(n) {
 
 // ==================== STEP 1: CARD HIGHLIGHT & KEYBOARD NAV ====================
 
-var scenarioList = ['gaming', 'productivity', 'ai', 'office'];
+var scenarioList = ['gaming', 'productivity', 'ai', 'office', 'apple'];
 var inputMode = 'keyboard'; // 'keyboard' | 'mouse' — 追踪用户最后一次使用的输入方式
+var appleModelIndex = 0; // keyboard nav: current highlighted Apple model index
 
 function highlightCard(s) {
   state.scenario = s;
@@ -1635,30 +1637,66 @@ function confirmScenario() {
   goStep(2);
 }
 
-// Arrow key navigation on Step 1
+// Arrow key navigation: Step 1 (scenarios) and Step 2 (Apple models)
 document.addEventListener('keydown', function(e) {
   var step1 = document.getElementById('step1');
-  if (!step1 || !step1.classList.contains('active')) return; // only on Step 1
-  var idx = scenarioList.indexOf(state.scenario || 'gaming');
-  if (e.key === 'ArrowLeft') {
-    e.preventDefault();
-    inputMode = 'keyboard';
-    document.body.classList.add('keyboard-mode');
-    document.body.classList.remove('mouse-mode');
-    idx = (idx - 1 + scenarioList.length) % scenarioList.length;
-    highlightCard(scenarioList[idx]);
-  } else if (e.key === 'ArrowRight') {
-    e.preventDefault();
-    inputMode = 'keyboard';
-    document.body.classList.add('keyboard-mode');
-    document.body.classList.remove('mouse-mode');
-    idx = (idx + 1) % scenarioList.length;
-    highlightCard(scenarioList[idx]);
-  } else if (e.key === 'Enter') {
-    e.preventDefault();
-    confirmScenario();
+  var step2 = document.getElementById('step2');
+
+  // ---- Step 1: scenario card navigation ----
+  if (step1 && step1.classList.contains('active')) {
+    var idx = scenarioList.indexOf(state.scenario || 'gaming');
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      inputMode = 'keyboard';
+      document.body.classList.add('keyboard-mode');
+      document.body.classList.remove('mouse-mode');
+      idx = (idx - 1 + scenarioList.length) % scenarioList.length;
+      highlightCard(scenarioList[idx]);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      inputMode = 'keyboard';
+      document.body.classList.add('keyboard-mode');
+      document.body.classList.remove('mouse-mode');
+      idx = (idx + 1) % scenarioList.length;
+      highlightCard(scenarioList[idx]);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      confirmScenario();
+    }
+  }
+
+  // ---- Step 2: Apple model keyboard navigation ----
+  if (step2 && step2.classList.contains('active') && state.scenario === 'apple') {
+    var appleModels = DB.compute.filter(function(a) { return a.brand === 'apple'; });
+    if (appleModels.length === 0) return;
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      inputMode = 'keyboard';
+      document.body.classList.add('keyboard-mode');
+      document.body.classList.remove('mouse-mode');
+      appleModelIndex = (appleModelIndex - 1 + appleModels.length) % appleModels.length;
+      highlightAppleModel(appleModels);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      inputMode = 'keyboard';
+      document.body.classList.add('keyboard-mode');
+      document.body.classList.remove('mouse-mode');
+      appleModelIndex = (appleModelIndex + 1) % appleModels.length;
+      highlightAppleModel(appleModels);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      setAppleModel(appleModels[appleModelIndex].id);
+    }
   }
 });
+
+// Highlight an Apple model card via keyboard (visual only, no navigation)
+function highlightAppleModel(models) {
+  var cards = document.querySelectorAll('.apple-model-card');
+  cards.forEach(function(card, i) {
+    card.classList.toggle('key-focus', i === appleModelIndex);
+  });
+}
 
 function selectScenarioStep(s) {
   highlightCard(s);
@@ -1985,8 +2023,14 @@ function renderAppleCompare() {
   var appleModels = DB.compute.filter(function(a) { return a.brand === 'apple'; });
   var selectedId = (currentBuild && currentBuild.appleSelected) ? currentBuild.appleSelected.id : (appleModels.length > 0 ? appleModels[0].id : '');
   
+  // Sync keyboard nav index with currently selected model
+  appleModelIndex = 0;
+  for (var _ai = 0; _ai < appleModels.length; _ai++) {
+    if (appleModels[_ai].id === selectedId) { appleModelIndex = _ai; break; }
+  }
+  
   var html = '';
-  appleModels.forEach(function(m) {
+  appleModels.forEach(function(m, idx) {
     var isSelected = (m.id === selectedId);
     var cpuDesc = m.cpuCores + '\u6838CPU (' + m.cpuPerf + '\u6027\u80fd+' + m.cpuEff + '\u80fd\u6548)';
     var gpuDesc = m.gpuCores + '\u6838GPU';
@@ -2318,101 +2362,40 @@ function undoAllAppleUpgrades() {
   undoLastAppleUpgrade();
 }
 
-// Apple model picker - swap to selected model
+// Apple model picker - select a model and navigate to Step 3
+// Relies on goStep(3) -> rebuild() -> buildRecommendation('apple') which respects
+// currentBuild.appleSelected (line 1052-1060) to pick the user's chosen model.
 function setAppleModel(modelId) {
-  // Always find the model first (don't early-return on null currentBuild)
-  var model = null;
+  // Find the matching model from DB
   var appleModels = DB.compute.filter(function(a) { return a.brand === 'apple'; });
+  var model = null;
   for (var i = 0; i < appleModels.length; i++) {
     if (appleModels[i].id === modelId) { model = appleModels[i]; break; }
   }
   if (!model) return;
 
-  // If currentBuild is null, initialize it
+  // Init minimal currentBuild if this is first Apple selection ever
   if (!currentBuild) {
-    currentBuild = { parts: {}, summary: {}, appleModels: appleModels, isApple: true };
+    currentBuild = { isApple: true };
   }
 
-  // If currentBuild doesn't have Apple data, build from scratch
-  if (!currentBuild.appleSelected) {
-    currentBuild = {
-      parts: { cpu:{}, gpu:{}, ram:{}, storage:{}, monitor:{}, keyboard:{}, mouse:{} },
-      summary: {}, appleModels: appleModels, isApple: true
-    };
-    currentBuild.appleSelected = model;
-    currentBuild.totalPrice = model.price;
-    currentBuild.totalTDP = 170;
-    currentBuild.performanceScore = Math.round(Math.min(100, model.aiScore / 1200 + model.unifiedMem / 4));
-    currentBuild.summary = {
-      totalPrice: model.price, remaining: 0, performanceScore: currentBuild.performanceScore,
-      pricePerformance: Math.round(currentBuild.performanceScore * 1000 / model.price * 10) / 10,
-      totalTDP: 170, gpuVRAM: model.unifiedMem, cpuCores: model.cpuCores,
-      ramCapacity: model.unifiedMem, storageCapacity: 1024, cpuModel: model.name,
-      gpuModel: '集成GPU', ramModel: model.unifiedMem+'GB 统一内存',
-      ramECC: false, ramFreq: Math.round(model.memBW/1024), ramGen: '统一'
-    };
-    currentBuild.parts.cpu = { name: model.name };
-    currentBuild.parts.gpu = { name: '集成GPU', vram: model.unifiedMem, gpuCores: model.gpuCores };
-    currentBuild.parts.ram = { name: model.unifiedMem+'GB 统一内存', capacity: model.unifiedMem };
-    currentBuild.parts.storage = { name: '1TB SSD' };
-    currentBuild.pricePerformance = currentBuild.summary.pricePerformance;
-    renderAppleCompare();
-    // Directly render Step 3 without going through goStep(3)
-    renderStep3(currentBuild);
-    currentStep = 3;
-    document.querySelectorAll('.step-content').forEach(function(el) {
-      el.classList.toggle('active', el.id === 'step3');
-    });
-    document.querySelectorAll('.step-item').forEach(function(el) {
-      var stepNum = parseInt(el.dataset.step);
-      el.classList.toggle('active', stepNum === 3);
-      el.classList.toggle('done', stepNum < 3);
-    });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    return;
-  }
-
-  // Normal flow: currentBuild already has Apple data
+  // Track old price for upgrade history
   var oldPrice = currentBuild.appleSelected ? currentBuild.appleSelected.price : 0;
-  currentBuild.appleSelected = model;
-  currentBuild.totalPrice = model.price;
-  currentBuild.summary.totalPrice = model.price;
-  currentBuild.summary.performanceScore = Math.round(Math.min(100, model.aiScore / 1200 + model.unifiedMem / 4));
-  currentBuild.summary.gpuVRAM = model.unifiedMem;
-  currentBuild.summary.cpuCores = model.cpuCores;
-  currentBuild.summary.ramCapacity = model.unifiedMem;
-  currentBuild.summary.cpuModel = model.name;
-  currentBuild.performanceScore = currentBuild.summary.performanceScore;
-  currentBuild.summary.pricePerformance = Math.round(currentBuild.performanceScore * 1000 / model.price * 10) / 10;
-  currentBuild.parts.cpu.name = model.name;
-  currentBuild.parts.ram.name = model.unifiedMem+'GB 统一内存';
-  currentBuild.parts.ram.capacity = model.unifiedMem;
-  currentBuild.parts.gpu.vram = model.unifiedMem;
-  currentBuild.parts.gpu.gpuCores = model.gpuCores;
 
-  // Track price change
-  if (oldPrice !== model.price) {
+  // Set the selected model so buildRecommendation can pick it up
+  currentBuild.appleSelected = model;
+  currentBuild.isApple = true;
+
+  // Track price change (record BEFORE rebuild overwrites currentBuild)
+  if (oldPrice !== model.price && oldPrice > 0) {
     appleUpgradeHistory.push({
       type: 'apple', oldPart: '前型号', newPart: model.name,
       oldPrice: oldPrice, newPrice: model.price, diff: model.price - oldPrice
     });
   }
 
-  // Re-render to update highlight in model grid, then show Step 3
-  renderAppleCompare();
-  // Directly render Step 3 without going through goStep(3) (which calls rebuild)
-  renderStep3(currentBuild);
-  // Show Step 3
-  currentStep = 3;
-  document.querySelectorAll('.step-content').forEach(function(el) {
-    el.classList.toggle('active', el.id === 'step3');
-  });
-  document.querySelectorAll('.step-item').forEach(function(el) {
-    var stepNum = parseInt(el.dataset.step);
-    el.classList.toggle('active', stepNum === 3);
-    el.classList.toggle('done', stepNum < 3);
-  });
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // goStep(3) -> rebuild() -> buildRecommendation('apple') respects appleSelected
+  goStep(3);
 }
 
 // ---- Summary ----
