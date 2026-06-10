@@ -4178,7 +4178,7 @@ function renderBenchmarkAI(build) {
     { id:'120B', name:'120B+ 超大模型', vramMinFP16:240, vramMinINT4:60, tokTarget:5, desc:'Mixtral 8x22B, Falcon 180B' }
   ];
 
-  var targetSize = state.aiModelSize || 'auto';
+  var targetSize = (state.aiModelSize || '13B') === 'auto' ? '13B' : state.aiModelSize;
 
   html += '<div style="overflow-x:auto;">';
   html += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
