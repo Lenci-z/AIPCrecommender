@@ -82,6 +82,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .ecc-badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; background: #e8f5e9; color: #2e7d32; margin-left: 4px; }
 .mem-type { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; margin-left: 4px; }
 .mem-type.ddr5 { background: #e3f2fd; color: #1565c0; }
+.apple-model-card { transition: all 0.2s ease; }
+.apple-model-card:hover { box-shadow: 0 4px 12px rgba(0,113,227,0.2); transform: translateY(-2px); border-color: #0071e3 !important; }
 .mem-type.ddr4 { background: #f3e5f5; color: #7b1fa2; }
 
 @media (max-width: 768px) {
@@ -183,22 +185,22 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
     <div style="margin-bottom:16px;font-size:14px;font-weight:500;">请选择你的主要使用场景：</div>
     <div style="font-size:11px;color:#86868b;margin:-10px 0 12px 2px;">点击选择 · ← → 方向键切换</div>
     <div class="step-pick-card" id="scenarioGrid">
-      <div class="scenario-card active" data-scenario="gaming" onclick="highlightCard(&#39;gaming&#39;)">
+      <div class="scenario-card active" data-scenario="gaming" onclick="selectScenarioStep(&#39;gaming&#39;)">
         <div class="icon">🎮</div>
         <div class="name">游戏</div>
         <div class="desc">高帧率 / 高画质 / 3A大作</div>
       </div>
-      <div class="scenario-card" data-scenario="productivity" onclick="highlightCard(&#39;productivity&#39;)">
+      <div class="scenario-card" data-scenario="productivity" onclick="selectScenarioStep(&#39;productivity&#39;)">
         <div class="icon">💻</div>
         <div class="name">生产力 / 工作站</div>
         <div class="desc">视频剪辑 / 3D渲染 / 编程</div>
       </div>
-      <div class="scenario-card" data-scenario="ai" onclick="highlightCard(&#39;ai&#39;)">
+      <div class="scenario-card" data-scenario="ai" onclick="selectScenarioStep(&#39;ai&#39;)">
         <div class="icon">🤖</div>
         <div class="name">AI / 深度学习</div>
         <div class="desc">大模型推理 / 训练 / 数据科学</div>
       </div>
-      <div class="scenario-card" data-scenario="office" onclick="highlightCard(&#39;office&#39;)">
+      <div class="scenario-card" data-scenario="office" onclick="selectScenarioStep(&#39;office&#39;)">
         <div class="icon">💼</div>
         <div class="name">日常办公</div>
         <div class="desc">文档 / 网页 / 轻度图像处理</div>
@@ -213,23 +215,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
           <div style="font-size:12px;color:#86868b;margin-top:2px;">Mac Studio / MacBook Pro · 统一内存 · 与 PC 方案对比</div>
         </div>
         <span style="font-size:13px;color:#86868b;white-space:nowrap;">查看 →</span>
-      </div>
-    </div>
-    <!-- Apple Model Selector (shown only in apple scenario) -->
-    <div id="appleModelSelector" style="display:none;margin-bottom:16px;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-        <span style="font-size:15px;font-weight:600;"> 选择 Mac Studio 型号</span>
-        <span style="font-size:11px;color:#86868b;">点击型号切换配置</span>
-      </div>
-      <div id="appleCompareGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:10px;"></div>
-    </div>
-    <!-- Apple build mode -->
-    <div id="appleBuildControls" style="display:none;margin-bottom:16px;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:12px;color:#86868b;">💻 外设配置:</span>
-        <button class="mode-btn active" data-amode="full" onclick="setAppleBuildMode(&#39;full&#39;)" style="padding:5px 14px;font-size:11px;border:0.5px solid #0071e3;border-radius:6px;background:#e8f0fe;cursor:pointer;color:#0071e3;font-weight:500;">💻 全套 (含外设)</button>
-        <button class="mode-btn" data-amode="components" onclick="setAppleBuildMode(&#39;components&#39;)" style="padding:5px 14px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:6px;background:#fff;cursor:pointer;">👓 仅主机</button>
-        <span id="applePerfHint" style="font-size:11px;color:#86868b;margin-left:8px;"></span>
       </div>
     </div>
     <div class="step-nav">
@@ -248,14 +233,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
         <div style="display:flex;align-items:center;gap:8px;">
           <input type="range" id="budgetSlider" min="3000" max="50000" step="500" value="8000" oninput="syncBudget(&#39;slider&#39;)" style="flex: 1 1 0%; min-width: 120px; accent-color: rgb(0, 113, 227);">
           <input type="number" id="budgetInput" value="8000" min="1000" step="500" oninput="syncBudget(&#39;input&#39;)" style="width:100px;padding:6px 10px;border:1px solid #d2d2d7;border-radius:8px;font-size:14px;text-align:right;outline:none;" onfocus="this.select()">
-          <span class="budget-display" id="budgetDisplay">¥15,000</span>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
           <button class="budget-preset" onclick="setBudget(3000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">¥3K</button>
           <button class="budget-preset" onclick="setBudget(5000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">¥5K</button>
-          <button class="budget-preset" onclick="setBudget(8000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #0071e3;border-radius:4px;background:#e8f0fe;cursor:pointer;color:#0071e3;font-weight:500;">¥8K</button>
+          <button class="budget-preset active" onclick="setBudget(8000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">¥8K</button>
           <button class="budget-preset" onclick="setBudget(10000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">¥10K</button>
-          <button class="budget-preset active" onclick="setBudget(15000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">¥15K</button>
+          <button class="budget-preset" onclick="setBudget(15000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">¥15K</button>
           <button class="budget-preset" onclick="setBudget(20000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">¥20K</button>
           <button class="budget-preset" onclick="setBudget(25000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">¥25K</button>
           <button class="budget-preset" onclick="setBudget(30000)" style="padding:3px 10px;font-size:11px;border:0.5px solid #d2d2d7;border-radius:4px;background:#fff;cursor:pointer;">¥30K</button>
@@ -370,9 +354,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
         </div>
       </div>
     </div>
+    <!-- Apple Model Selector (in Step 2, shown only in apple scenario) -->
+    <div id="appleModelSelector" style="display:none;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <span style="font-size:15px;font-weight:600;">&#63743; 选择 Mac Studio 型号</span>
+        <span style="font-size:11px;color:#86868b;">点击型号切换配置</span>
+      </div>
+      <div id="appleCompareGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:10px;"></div>
+    </div>
     <div class="step-nav">
-      <button class="btn btn-secondary" onclick="goStep(1)">← 上一步</button>
-      <button class="btn" onclick="goStep(3)">生成配置 →</button>
+      <button class="btn btn-secondary" onclick="goStep(1)">&#8592; 上一步</button>
+      <button class="btn" onclick="goStep(3)">生成配置 &#8594;</button>
     </div>
   </div>
 
@@ -739,7 +731,6 @@ var state = {
   monitorBrand: 'auto',
   monitorSize: 'auto',
   kbBrand: 'auto',
-  appleBuildMode: 'full',
   aiModelSize: 'auto',
   psuHeadroom: 50,
   warrantyMode: 'official',
@@ -1053,12 +1044,24 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
   if (scenario === 'apple') {
     var applePool = DB.compute.filter(function(a) { return a.brand === 'apple' && officialFilter(a); });
     applePool.sort(function(a, b) { return a.price - b.price; });
-    // Budget-aware selection
+    
+    // Respect user's previous model selection if it exists in pool
     var apple = null;
-    for (var ai = applePool.length - 1; ai >= 0; ai--) {
-      if (applePool[ai].price <= budget) { apple = applePool[ai]; break; }
+    if (currentBuild && currentBuild.appleSelected) {
+      for (var aui = 0; aui < applePool.length; aui++) {
+        if (applePool[aui].id === currentBuild.appleSelected.id) {
+          apple = applePool[aui];
+          break;
+        }
+      }
     }
-    if (!apple) apple = applePool[0];
+    // Fallback to budget-aware selection if no prior selection
+    if (!apple) {
+      for (var ai = applePool.length - 1; ai >= 0; ai--) {
+        if (applePool[ai].price <= budget) { apple = applePool[ai]; break; }
+      }
+      if (!apple) apple = applePool[0];
+    }
     
     // Store all models for the picker UI
     build.appleModels = applePool;
@@ -1076,9 +1079,8 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
     build.isApple = true;
     usedBudget = apple.price;
     
-    // Apple: add monitor/keyboard/mouse in "full" mode only
-    if (state.appleBuildMode === 'full') {
-      var remaining = budget - usedBudget;
+    // Apple: add monitor/keyboard/mouse (always full mode)
+    var remaining = budget - usedBudget;
       // Monitor: prioritize Apple Studio Display, then fallback to other brands
       var appleMons = DB.monitor.filter(function(m) { return m.brand === 'apple' && officialFilter(m); });
       var monitorPool2 = appleMons.length > 0 ? appleMons : DB.monitor.slice().filter(function(m) {
@@ -1107,7 +1109,6 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
       if (msPoolA.length === 0) msPoolA = DB.mouse;
       build.parts.mouse = msPoolA[0];
       usedBudget += msPoolA[0].price || 0;
-    }
     
     build.totalPrice = usedBudget;
     build.totalTDP = 170;
@@ -1547,14 +1548,24 @@ var currentStep = 1;
 function goStep(n) {
   if (n === 3) {
     goStep._active = true; // signal renderStep3 to scroll
-    state.brandPref = document.getElementById('brandPref').value;
-    state.memPref = document.getElementById('memPref').value;
-    state.mbBrand = document.getElementById('mbBrand').value;
+    // Read form values safely (handle display:none elements)
     try {
+      var _brandPref = document.getElementById('brandPref');
+      var _memPref = document.getElementById('memPref');
+      var _mbBrand = document.getElementById('mbBrand');
+      state.brandPref = _brandPref ? _brandPref.value : 'all';
+      state.memPref = _memPref ? _memPref.value : 'auto';
+      state.mbBrand = _mbBrand ? _mbBrand.value : 'auto';
       rebuild();
     } catch(e) {
       console.error('goStep(3) rebuild error:', e);
-      alert('\u751f\u6210\u914d\u7f6e\u5931\u8d25\uff1a' + e.message + '\n\n\u8bf7\u6253\u5f00\u6d4f\u89c8\u5668\u63a7\u5236\u53f0(F12) \u67e5\u770b\u5b8c\u6574\u9519\u8bef\u4fe1\u606f\u3002');
+      var errDiv = document.getElementById('step3Warnings');
+      if (errDiv) {
+        errDiv.innerHTML = '<div style="padding:12px;background:#fcebeb;border-radius:8px;font-size:12px;color:#a32d2d;border:1px solid #f5c6cb;">&#9888; \u751f\u6210\u914d\u7f6e\u5931\u8d25: ' + e.message + '</div>';
+        errDiv.style.display = '';
+      } else {
+        alert('\u751f\u6210\u914d\u7f6e\u5931\u8d25\uff1a' + e.message + '\n\n\u8bf7\u6253\u5f00\u6d4f\u89c8\u5668\u63a7\u5236\u53f0(F12) \u67e5\u770b\u5b8c\u6574\u9519\u8bef\u4fe1\u606f\u3002');
+      }
       goStep._active = false;
       return;
     }
@@ -1596,17 +1607,16 @@ function confirmScenario() {
   var s = state.scenario || 'gaming';
   // PC scenarios → navigate to Step 2 with setup
   var appleSel = document.getElementById('appleModelSelector');
-  var appleBuild = document.getElementById('appleBuildControls');
   var mainCtrl = document.getElementById('mainControls');
   var aiGroup = document.getElementById('aiModelGroup');
   if (s === 'apple') {
     appleSel.style.display = '';
-    appleBuild.style.display = '';
     mainCtrl.style.display = 'none';
     document.getElementById('step2').querySelector('.step-nav').querySelectorAll('button')[1].textContent = '\u67e5\u770b\u914d\u7f6e \u2192';
+    // Ensure Apple model grid is populated when entering Step 2
+    renderAppleCompare();
   } else {
     appleSel.style.display = 'none';
-    appleBuild.style.display = 'none';
     mainCtrl.style.display = '';
     document.getElementById('step2').querySelector('.step-nav').querySelectorAll('button')[1].textContent = '\u751f\u6210\u914d\u7f6e \u2192';
   }
@@ -1644,9 +1654,10 @@ function selectScenario(s) {
   var mainCtrl = document.getElementById('mainControls');
   var aiGroup = document.getElementById('aiModelGroup');
   if (s === 'apple') {
-    state.buildMode = state.appleBuildMode || 'full';
+    state.buildMode = 'full';
     appleSel.style.display = '';
     mainCtrl.style.display = 'none';
+    renderAppleCompare();
   } else {
     state.buildMode = 'components';
     appleSel.style.display = 'none';
@@ -1659,7 +1670,6 @@ function selectScenario(s) {
 function syncBudget(source) {
   var slider = document.getElementById('budgetSlider');
   var input = document.getElementById('budgetInput');
-  var display = document.getElementById('budgetDisplay');
   var v;
   if (source === 'slider') {
     v = parseInt(slider.value);
@@ -1675,7 +1685,6 @@ function syncBudget(source) {
     slider.value = Math.min(v, parseInt(slider.max));
   }
   state.budget = v;
-  display.textContent = '\u00a5' + v.toLocaleString();
   // Update flex hint
   var hint = document.getElementById('flexHint');
   if (hint) hint.textContent = '\u5b9e\u9645\u53ef\u7528: \u00a5' + getEffectiveBudget().toLocaleString();
@@ -1732,17 +1741,6 @@ function setBuildMode(mode) {
       el.classList.toggle('active', el.dataset.mode === mode);
     });
   }
-  rebuild();
-}
-
-function setAppleBuildMode(mode) {
-  state.appleBuildMode = mode;
-  state.buildMode = mode;
-  document.querySelectorAll('#appleModelSelector .mode-btn').forEach(function(el) {
-    el.classList.toggle('active', el.dataset.amode === mode);
-  });
-  var hint = document.getElementById('applePerfHint');
-  if (hint) hint.textContent = mode === 'full' ? '含显示器+键盘+鼠标推荐' : '仅 Mac Studio 主机';
   rebuild();
 }
 
@@ -1982,7 +1980,7 @@ function renderAppleCompare() {
     var border = isSelected ? '2px solid #0071e3' : '0.5px solid #e8e8ed';
     var bg = isSelected ? '#f0f7ff' : '#fff';
     
-    html += '<div onclick="setAppleModel(\'' + m.id + '\')" style="cursor:pointer;border:' + border + ';border-radius:12px;background:' + bg + ';padding:14px;position:relative;">';
+    html += '<div class="apple-model-card" onclick="setAppleModel(\'' + m.id + '\')" style="cursor:pointer;border:' + border + ';border-radius:12px;background:' + bg + ';padding:14px;position:relative;">';
     if (isSelected) html += '<div style="position:absolute;top:8px;right:8px;font-size:10px;background:#0071e3;color:#fff;padding:2px 8px;border-radius:6px;">\u5f53\u524d\u9009\u62e9</div>';
     html += '<div style="font-size:13px;font-weight:600;margin-bottom:8px;">' + (m.officialName || m.name) + '</div>';
     html += '<table style="width:100%;font-size:11px;border-collapse:collapse;">';
@@ -2304,13 +2302,46 @@ function undoAllAppleUpgrades() {
 
 // Apple model picker - swap to selected model
 function setAppleModel(modelId) {
-  if (!currentBuild || !currentBuild.appleModels) return;
+  // Find the model from database directly (no dependency on currentBuild)
+  if (!currentBuild) return;
   var model = null;
-  for (var i = 0; i < currentBuild.appleModels.length; i++) {
-    if (currentBuild.appleModels[i].id === modelId) { model = currentBuild.appleModels[i]; break; }
+  var appleModels = DB.compute.filter(function(a) { return a.brand === 'apple'; });
+  for (var i = 0; i < appleModels.length; i++) {
+    if (appleModels[i].id === modelId) { model = appleModels[i]; break; }
   }
   if (!model) return;
-  // Update build with this model
+  
+  // If currentBuild doesn't have Apple data, rebuild from scratch
+  if (!currentBuild.appleSelected) {
+    var appleBuyNow = { parts: { cpu:{}, gpu:{}, ram:{}, storage:{}, monitor:{}, keyboard:{}, mouse:{} }, summary: {} };
+    appleBuyNow.appleSelected = model;
+    appleBuyNow.appleModels = appleModels;
+    appleBuyNow.totalPrice = model.price;
+    appleBuyNow.totalTDP = 170;
+    appleBuyNow.performanceScore = Math.round(Math.min(100, model.aiScore / 1200 + model.unifiedMem / 4));
+    appleBuyNow.summary = {
+      totalPrice: model.price, remaining: 0, performanceScore: appleBuyNow.performanceScore,
+      pricePerformance: Math.round(appleBuyNow.performanceScore * 1000 / model.price * 10) / 10,
+      totalTDP: 170, gpuVRAM: model.unifiedMem, cpuCores: model.cpuCores,
+      ramCapacity: model.unifiedMem, storageCapacity: 1024, cpuModel: model.name,
+      gpuModel: '\u96c6\u6210GPU', ramModel: model.unifiedMem+'GB \u7edf\u4e00\u5185\u5b58',
+      ramECC: false, ramFreq: Math.round(model.memBW/1024), ramGen: '\u7edf\u4e00'
+    };
+    appleBuyNow.parts.cpu = { name: model.name };
+    appleBuyNow.parts.gpu = { name: '\u96c6\u6210GPU', vram: model.unifiedMem, gpuCores: model.gpuCores };
+    appleBuyNow.parts.ram = { name: model.unifiedMem+'GB \u7edf\u4e00\u5185\u5b58', capacity: model.unifiedMem };
+    appleBuyNow.parts.storage = { name: '1TB SSD' };
+    appleBuyNow.pricePerformance = appleBuyNow.summary.pricePerformance;
+    appleBuyNow.isApple = true;
+    currentBuild = appleBuyNow;
+    // Re-render Apple model grid to update highlight
+    renderAppleCompare();
+    // Navigate to Step 3
+    goStep(3);
+    return;
+  }
+  
+  // Normal flow: currentBuild already has Apple data
   var oldPrice = currentBuild.appleSelected ? currentBuild.appleSelected.price : 0;
   currentBuild.appleSelected = model;
   currentBuild.totalPrice = model.price;
@@ -2323,7 +2354,7 @@ function setAppleModel(modelId) {
   currentBuild.performanceScore = currentBuild.summary.performanceScore;
   currentBuild.summary.pricePerformance = Math.round(currentBuild.performanceScore * 1000 / model.price * 10) / 10;
   currentBuild.parts.cpu.name = model.name;
-  currentBuild.parts.ram.name = model.unifiedMem+'GB 统一内存';
+  currentBuild.parts.ram.name = model.unifiedMem+'GB \u7edf\u4e00\u5185\u5b58';
   currentBuild.parts.ram.capacity = model.unifiedMem;
   currentBuild.parts.gpu.vram = model.unifiedMem;
   currentBuild.parts.gpu.gpuCores = model.gpuCores;
@@ -2331,18 +2362,14 @@ function setAppleModel(modelId) {
   // Track price change
   if (oldPrice !== model.price) {
     appleUpgradeHistory.push({
-      type: 'apple', oldPart: '前型号', newPart: model.name,
+      type: 'apple', oldPart: '\u524d\u578b\u53f7', newPart: model.name,
       oldPrice: oldPrice, newPrice: model.price, diff: model.price - oldPrice
     });
   }
   
-  renderSummary(currentBuild);
-  renderBuildTable(currentBuild);
-  renderCurrentPerf(currentBuild);
-  renderBenchmark(currentBuild);
-  renderBenchmarkProd(currentBuild);
-  renderBenchmarkAI(currentBuild);
-  renderUpgradeHistory();
+  // Re-render to update highlight in model grid, then navigate
+  renderAppleCompare();
+  goStep(3);
 }
 
 // ---- Summary ----
@@ -2414,7 +2441,7 @@ function renderSummary(build) {
       var bg = isSelected ? '#f0f7ff' : '#fff';
       var badge = isSelected ? '<div style="position:absolute;top:-1px;right:-1px;background:#0071e3;color:#fff;font-size:9px;padding:2px 8px;border-radius:0 8px 0 8px;">已选</div>' : '';
       var inBudget = m.price <= state.budget;
-      pickerHtml += '<div onclick="setAppleModel(\'' + m.id + '\')" style="position:relative;border:' + border + ';border-radius:10px;padding:12px;background:' + bg + ';cursor:pointer;' + (inBudget ? '' : 'opacity:0.5;') + '">' + badge;
+      pickerHtml += '<div class="apple-model-card" onclick="setAppleModel(\'' + m.id + '\')" style="position:relative;border:' + border + ';border-radius:10px;padding:12px;background:' + bg + ';cursor:pointer;' + (inBudget ? '' : 'opacity:0.5;') + '">' + badge;
       pickerHtml += '<div style="font-size:12px;font-weight:600;margin-bottom:4px;">' + m.note + '</div>';
       pickerHtml += '<div style="font-size:11px;color:#555;line-height:1.5;">';
       pickerHtml += m.cpuCores + '核CPU / ' + m.gpuCores + '核GPU<br>';
@@ -4962,6 +4989,8 @@ var priceDb = {};
 // Build price history database
 priceDb = buildPriceDb();
 rebuild();
+// Initialize budget display & preset highlights on page load
+setTimeout(function() { syncBudget('slider'); }, 100);
 // Price chart selector is loaded on-demand in v5.3 (step wizard)
 try { populatePriceSelector(); } catch(e) {}
 </script>
