@@ -1079,6 +1079,74 @@ function analyzeBottleneck(build, scenario, budget) {
     scores.push(0);
   }
 
+  // ---- Motherboard Bottleneck (chipset/socket mismatch) ----
+  var mb = build.parts.mb;
+  if (mb && mb.price > 0 && mb.socket) {
+    var socketOk = build.parts.cpu && build.parts.cpu.socket === mb.socket;
+    if (!socketOk && build.parts.cpu && build.parts.cpu.socket) {
+      bn.mb = { level: 'critical', severity: 60, detail: '主板(' + mb.socket + ') 与CPU(' + build.parts.cpu.socket + ') 插槽不匹配',
+        fix: '更换兼容主板 (需' + build.parts.cpu.socket + '接口)' };
+      scores.push(60);
+    } else {
+      bn.mb = { level: 'good', severity: 0, detail: '主板芯片组(' + mb.chipset + ') 与CPU接口匹配', fix: '' };
+      scores.push(0);
+    }
+  } else {
+    bn.mb = { level: 'good', severity: 0, detail: '主板已适配', fix: '' };
+    scores.push(0);
+  }
+
+  // ---- Cooler Bottleneck (TDP mismatch) ----
+  var cooler = build.parts.cooler;
+  if (cooler && cooler.tdpCapable > 0) {
+    var cpuTdp = (build.parts.cpu && build.parts.cpu.tdp) || 0;
+    if (cpuTdp > 0 && cooler.tdpCapable < cpuTdp) {
+      var coolerSev = Math.min(50, Math.round((1 - cooler.tdpCapable / cpuTdp) * 100));
+      // Find upgrade
+      var coolerPool2 = DB.cooler.filter(function(c) { return c.type === cooler.type && c.tdpCapable >= cpuTdp && officialFilter(c); });
+      coolerPool2.sort(function(a,b) { return a.price - b.price; });
+      var coolerFix = coolerPool2.length > 0 ? '可升级至 ' + coolerPool2[0].name + ' (+' + (coolerPool2[0].price - cooler.price > 0 ? '¥' + (coolerPool2[0].price - cooler.price) : '¥' + coolerPool2[0].price) + ')' : '需更高效散热 (≥' + cpuTdp + 'W TDP)';
+      bn.cooler = { level: coolerSev > 50 ? 'critical' : 'warn', severity: coolerSev,
+        detail: '散热器TDP(' + cooler.tdpCapable + 'W) 不足以压制CPU(' + cpuTdp + 'W)',
+        fix: coolerFix };
+      scores.push(coolerSev);
+    } else {
+      bn.cooler = { level: 'good', severity: 0, detail: '散热器TDP(' + (cooler.tdpCapable || '?') + 'W) 足够压制CPU(' + cpuTdp + 'W)', fix: '' };
+      scores.push(0);
+    }
+  } else {
+    bn.cooler = { level: 'good', severity: 0, detail: '散热已适配', fix: '' };
+    scores.push(0);
+  }
+
+  // ---- PSU Bottleneck (wattage vs total power) ----
+  var psu = build.parts.psu;
+  if (psu && psu.wattage > 0) {
+    var totalPower = build.totalTDP || 0;
+    // Estimate total from parts if totalTDP not set
+    if (totalPower === 0) {
+      totalPower = (build.parts.cpu && build.parts.cpu.tdp || 0) + (build.parts.gpu && build.parts.gpu.tdp || 0) + 50;
+    }
+    var headroom = Math.round(totalPower * 0.2); // 20% headroom recommended
+    if (psu.wattage < totalPower + headroom) {
+      var psuSev = Math.min(60, Math.round((1 - psu.wattage / (totalPower + headroom)) * 100));
+      // Find PSU upgrade
+      var psuPool2 = DB.psu.filter(function(p) { return p.wattage >= totalPower + headroom && officialFilter(p); });
+      psuPool2.sort(function(a,b) { return a.price - b.price; });
+      var psuFix = psuPool2.length > 0 ? '可升级至 ' + psuPool2[0].name + ' (+' + (psuPool2[0].price - psu.price > 0 ? '¥' + (psuPool2[0].price - psu.price) : '¥' + psuPool2[0].price) + ')' : '需更大功率电源 (≥' + (totalPower + headroom) + 'W)';
+      bn.psu = { level: psuSev > 50 ? 'critical' : 'warn', severity: psuSev,
+        detail: '电源额定(' + psu.wattage + 'W) 不足以支撑整机功耗(约' + (totalPower + headroom) + 'W)',
+        fix: psuFix };
+      scores.push(psuSev);
+    } else {
+      bn.psu = { level: 'good', severity: 0, detail: '电源额定(' + psu.wattage + 'W) 足够支撑整机功耗(~' + totalPower + 'W + ' + headroom + 'W余量)', fix: '' };
+      scores.push(0);
+    }
+  } else {
+    bn.psu = { level: 'good', severity: 0, detail: '电源已适配', fix: '' };
+    scores.push(0);
+  }
+
   // ---- Overall ----
   var maxScore = Math.max.apply(null, scores);
   if (maxScore >= 50) bn.overall = 'critical';
@@ -1110,7 +1178,7 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
   var cfg = scenarioConfig[scenario];
   var build = { parts: {}, totalPrice: 0, totalTDP: 0, performanceScore: 0, summary: {}, warnings: [] };
   var usedBudget = 0;
-  var wantECC = cfg.needECC || (memPref === 'ecc');
+  var wantECC = (cfg.needECC || (memPref === 'ecc')) && budget >= 10000;
   var ddrOverride = memPref !== 'auto' && memPref !== 'ecc' ? memPref : null;
 
   // ======= APPLE ECOSYSTEM (独立选购) =======
@@ -2169,7 +2237,10 @@ function renderBottleneck(bn) {
     { key: 'cpu', label: 'CPU 瓶颈' },
     { key: 'gpu', label: 'GPU 瓶颈' },
     { key: 'ram', label: '内存 瓶颈' },
-    { key: 'storage', label: '存储 瓶颈' }
+    { key: 'storage', label: '存储 瓶颈' },
+    { key: 'mb', label: '主板 瓶颈' },
+    { key: 'cooler', label: '散热 瓶颈' },
+    { key: 'psu', label: '电源 瓶颈' }
   ];
   // Add brand compatibility card if warning exists
   if (bn.brandWarning) {
@@ -2296,7 +2367,7 @@ function findUpgradeOptions(key, data) {
   
   if (key === 'ram' && currentParts && currentParts.ram) {
     var cur = currentParts.ram;
-    var needECC = state.scenario === 'workstation' || state.scenario === 'productivity';
+    var needECC = (state.scenario === 'workstation' || state.scenario === 'productivity') && state.budget >= 10000;
     var pool = DB.ram.filter(function(r) { return offFilt(r) && r.gen === cur.gen && (!needECC || r.ecc || !scenarioConfig[state.scenario].needECC); });
     pool.sort(function(a,b) {
       if (needECC && a.ecc !== b.ecc) return a.ecc ? -1 : 1;
@@ -2316,6 +2387,49 @@ function findUpgradeOptions(key, data) {
     pool.sort(function(a,b) { return (b.seqRead || 0) - (a.seqRead || 0); });
     for (var i = 0; i < pool.length && opts.length < 3; i++) {
       if (pool[i].id !== cur.id && withinBudget(pool[i].price, cur.price)) {
+        var p = pool[i];
+        opts.push({ name: p.name, price: p.price, diff: p.price - cur.price, id: p.id });
+      }
+    }
+  }
+  
+  if (key === 'mb' && currentParts && currentParts.mb && currentParts.cpu) {
+    var cur = currentParts.mb;
+    var socket = currentParts.cpu.socket;
+    var pool = DB.mb.filter(function(m) { return offFilt(m) && m.socket === socket && m.id !== cur.id; });
+    // Sort by chipset tier (Z > B > A) then features
+    pool.sort(function(a,b) {
+      var aTier = { 'W880':0,'Z890':1,'X870E':1,'X670E':1,'Z790':1,'B860':2,'B850':2,'B760':2,'A620':3,'B550':4 }[a.chipset] || 5;
+      var bTier = { 'W880':0,'Z890':1,'X870E':1,'X670E':1,'Z790':1,'B860':2,'B850':2,'B760':2,'A620':3,'B550':4 }[b.chipset] || 5;
+      if (aTier !== bTier) return aTier - bTier;
+      return a.price - b.price;
+    });
+    for (var i = 0; i < pool.length && opts.length < 3; i++) {
+      if (withinBudget(pool[i].price, cur.price)) {
+        var p = pool[i];
+        opts.push({ name: p.name, price: p.price, diff: p.price - cur.price, id: p.id });
+      }
+    }
+  }
+  
+  if (key === 'cooler' && currentParts && currentParts.cooler) {
+    var cur = currentParts.cooler;
+    var pool = DB.cooler.filter(function(c) { return offFilt(c) && c.tdpCapable >= (cur.tdpCapable || 0) + 20 && c.id !== cur.id; });
+    pool.sort(function(a,b) { return a.tdpCapable - b.tdpCapable; });
+    for (var i = 0; i < pool.length && opts.length < 3; i++) {
+      if (withinBudget(pool[i].price, cur.price)) {
+        var p = pool[i];
+        opts.push({ name: p.name, price: p.price, diff: p.price - cur.price, id: p.id });
+      }
+    }
+  }
+  
+  if (key === 'psu' && currentParts && currentParts.psu) {
+    var cur = currentParts.psu;
+    var pool = DB.psu.filter(function(p) { return offFilt(p) && p.wattage >= (cur.wattage || 0) + 50 && p.id !== cur.id; });
+    pool.sort(function(a,b) { return a.wattage - b.wattage; });
+    for (var i = 0; i < pool.length && opts.length < 3; i++) {
+      if (withinBudget(pool[i].price, cur.price)) {
         var p = pool[i];
         opts.push({ name: p.name, price: p.price, diff: p.price - cur.price, id: p.id });
       }
@@ -2346,6 +2460,9 @@ function applyUpgrade(type, partId) {
   else if (type === 'gpu') db = DB.gpu;
   else if (type === 'ram') db = DB.ram;
   else if (type === 'storage') db = DB.storage;
+  else if (type === 'mb') db = DB.mb;
+  else if (type === 'cooler') db = DB.cooler;
+  else if (type === 'psu') db = DB.psu;
   else return;
   
   var newPart = null;
