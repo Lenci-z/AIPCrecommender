@@ -1148,6 +1148,19 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
   }
   // ======= END APPLE =======
 
+  // ---- Weight-based budget allocation ----
+  // Pre-calculate budget caps so high-weight components don't get crowded out
+  var totalWeight = cfg.weightCPU + cfg.weightGPU + cfg.weightRAM + cfg.weightStorage + cfg.weightOther;
+  var weightCaps = {
+    cpu:     Math.round(budget * cfg.weightCPU / totalWeight),
+    gpu:     Math.round(budget * cfg.weightGPU / totalWeight),
+    ram:     Math.round(budget * cfg.weightRAM / totalWeight),
+    storage: Math.round(budget * cfg.weightStorage / totalWeight),
+    other:   Math.round(budget * cfg.weightOther / totalWeight)
+  };
+  // Remaining unallocated after all weight caps
+  var unallocated = budget - weightCaps.cpu - weightCaps.gpu - weightCaps.ram - weightCaps.storage - weightCaps.other;
+  
   // ---- CPU ----
   var cpuPool = DB.cpu.filter(function(c) {
     if (brandPref === 'intel-nvidia' && c.brand !== 'intel') return false;
@@ -1162,12 +1175,12 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
   cpuPool.sort(function(a, b) { return scoreCPU(b, scenario) - scoreCPU(a, scenario); });
   var cpu = null;
   for (var i = 0; i < cpuPool.length; i++) {
-    var maxCpuPrice = budget * 0.25;
+    var maxCpuPrice = Math.max(weightCaps.cpu, budget * 0.15);
     if (cpuPool[i].price <= maxCpuPrice) { cpu = cpuPool[i]; break; }
   }
   if (!cpu) {
     cpu = cpuPool[cpuPool.length - 1];
-    if (cpu.price > 0) build.warnings.push('CPU价格('+cpu.price+')超出预算上限('+Math.round(budget*0.25)+')，建议提升预算');
+    if (cpu.price > 0) build.warnings.push('CPU价格('+cpu.price+')超出预算上限('+Math.round(maxCpuPrice)+')，建议提升预算');
   }
   build.parts.cpu = cpu;
   usedBudget += cpu.price;
@@ -1200,7 +1213,7 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
   mbPool.sort(function(a, b) { return a.price - b.price; });
   var mb = mbPool[0];
   if (mb) {
-    var mbBudget2 = scenario === 'office' ? budget * 0.08 : budget * 0.12;
+    var mbBudget2 = Math.min(budget * 0.12, weightCaps.other * 0.6 + unallocated * 0.3);
     for (var mi = 0; mi < mbPool.length; mi++) {
       if (mbPool[mi].price <= mbBudget2) mb = mbPool[mi];
       else break;
@@ -1225,7 +1238,7 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
   }
   var gpu = null;
   var remaining = budget - usedBudget;
-  var maxGpuPrice = remaining * 0.7;
+  var maxGpuPrice = Math.max(remaining * 0.7, Math.min(remaining, weightCaps.gpu + unallocated * 0.6));
   // Office: 按价格升序优先选最便宜显卡（或用核显）
   if (scenario === 'office') {
     gpuPool.sort(function(a, b) { return a.price - b.price; });
@@ -1263,7 +1276,7 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
     if (!officialFilter(r)) return false;
     return true;
   });
-  var targetRAM = Math.max(cfg.ramMinGB || 16, scenario === 'ai' ? 64 : (scenario === 'productivity' ? 32 : 16));
+  var targetRAM = cfg.ramMinGB || 16;
   if (wantECC && targetRAM < 32) targetRAM = 32; // ECC minimum
   ramPool.sort(function(a, b) {
     var aFit = Math.abs(a.capacity - targetRAM);
@@ -1303,6 +1316,14 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
   if (storage.price > remaining * 0.3) {
     storagePool.sort(function(a, b) { return a.price - b.price; });
     storage = storagePool[0];
+  }
+  // Enforce minimum storage capacity (don't downgrade below threshold)
+  if (storage.capacity < cfg.storageMinGB) {
+    var capPool = storagePool.filter(function(s) { return s.capacity >= cfg.storageMinGB; });
+    if (capPool.length > 0) {
+      capPool.sort(function(a, b) { return a.price - b.price; });
+      storage = capPool[0];
+    }
   }
   build.parts.storage = storage;
   usedBudget += storage.price;
@@ -1538,6 +1559,11 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
     ram: (build.parts.ram && build.parts.ram.id) || null,
     storage: (build.parts.storage && build.parts.storage.id) || null
   };
+
+  // Budget constraint: warn if over budget
+  if (usedBudget > budget && budget > 0) {
+    build.warnings.push('整机总价¥' + usedBudget.toLocaleString() + ' 超出预算¥' + budget.toLocaleString() + '，建议优先降低CPU/主板/机箱规格');
+  }
 
   return build;
 }
