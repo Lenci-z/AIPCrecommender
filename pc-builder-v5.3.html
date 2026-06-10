@@ -305,7 +305,12 @@ body.mouse-mode .step-pick-card .scenario-card:hover { transform:translateY(-2px
             <option value="deepcool">九州风神</option>
             <option value="thermalright">利民</option>
             <option value="noctua">猫头鹰</option>
+            <option value="arctic">Arctic</option>
+            <option value="coolermaster">酷冷至尊</option>
             <option value="corsair">海盗船</option>
+            <option value="nzxt">NZXT</option>
+            <option value="bequiet">be quiet!</option>
+            <option value="idcooling">ID-Cooling</option>
           </select>
         </div>
         <div class="control-group">
@@ -639,17 +644,46 @@ var DB = {
     { id:'PSU-500', name:'500W 80+ Bronze', brand:'greatwall', wattage:500, rating:'bronze', price:249, note:'入门游戏', official:true }
   ],
   cooler: [
+    // ============ 风冷 (排序: 按 tdpCapable 升序) ============
+    // --- 下压式/低功耗 ---
+    { id:'AIR-B', name:'风冷 下压式', brand:'deepcool', type:'air', tdpCapable:65, price:49, note:'入门低功耗', official:true },
+    { id:'NH-L9I', name:'猫头鹰 NH-L9i 下压式', brand:'noctua', type:'air', tdpCapable:95, price:299, note:'ITX下压式', official:true, launchPrice:349, launchDate:'2023-06' },
+    // --- 四热管单塔 (100-150W) ---
     { id:'AIR-S', name:'风冷 四热管', brand:'deepcool', type:'air', tdpCapable:120, price:79, note:'入门', official:true },
-    { id:'AIR-M', name:'风冷 双塔六热管', brand:'noctua', type:'air', tdpCapable:180, price:149, note:'主流', official:true },
-    { id:'AIO-240', name:'240mm 一体水冷', brand:'deepcool', type:'aio', tdpCapable:250, price:399, note:'主流水冷', official:true },
-    { id:'AIO-360', name:'360mm 一体水冷', brand:'corsair', type:'aio', tdpCapable:350, price:699, note:'高端水冷', official:true },
-    { id:'AIO-420', name:'420mm 一体水冷', brand:'nzxt', type:'aio', tdpCapable:400, price:1099, note:'旗舰水冷', official:false },
-    // Thermalright (利民)
+    { id:'DC-400', name:'九州风神 玄冰400 V5', brand:'deepcool', type:'air', tdpCapable:130, price:89, note:'四热管经典', official:true, launchPrice:109, launchDate:'2024-06' },
     { id:'TR-AX120', name:'利民 AX120 R SE 单塔', brand:'thermalright', type:'air', tdpCapable:150, price:89, note:'性价比单塔', official:true },
+    { id:'ARC-34', name:'Arctic Freezer 34', brand:'arctic', type:'air', tdpCapable:150, price:129, note:'单塔静音', official:true, launchPrice:159, launchDate:'2024-01' },
+    // --- 六热管单塔/双塔 (150-180W) ---
+    { id:'CM-212', name:'酷冷至尊 Hyper 212', brand:'coolermaster', type:'air', tdpCapable:160, price:159, note:'经典单塔', official:true, launchPrice:199, launchDate:'2023-06' },
+    { id:'NH-U12S', name:'猫头鹰 NH-U12S', brand:'noctua', type:'air', tdpCapable:160, price:349, note:'高端单塔', official:true, launchPrice:399, launchDate:'2022-09' },
+    { id:'TR-PA120', name:'利民 Peerless Assassin 120', brand:'thermalright', type:'air', tdpCapable:220, price:149, note:'性价比双塔', official:true, launchPrice:179, launchDate:'2024-01' },
+    // --- 双塔 (180-260W) ---
+    { id:'AIR-M', name:'风冷 双塔六热管', brand:'noctua', type:'air', tdpCapable:180, price:149, note:'主流', official:true },
     { id:'TR-FS140', name:'利民 FS140 双塔', brand:'thermalright', type:'air', tdpCapable:220, price:179, note:'性价比双塔', official:true },
+    { id:'TR-FC140', name:'利民 FC140 双塔', brand:'thermalright', type:'air', tdpCapable:220, price:199, note:'高规格双塔', official:true, launchPrice:239, launchDate:'2024-06' },
+    { id:'ID-SE226', name:'ID-Cooling SE-226-XT 双塔', brand:'idcooling', type:'air', tdpCapable:220, price:129, note:'高性价比双塔', official:true, launchPrice:159, launchDate:'2024-03' },
+    { id:'BD-DR4', name:'be quiet! Dark Rock 4', brand:'bequiet', type:'air', tdpCapable:200, price:459, note:'静音单塔', official:true, launchPrice:529, launchDate:'2023-09' },
+    { id:'DC-DS', name:'九州风神 大霜塔 V5', brand:'deepcool', type:'air', tdpCapable:260, price:179, note:'双塔经典', official:true, launchPrice:219, launchDate:'2024-06' },
+    // --- 旗舰双塔 (260W+) ---
+    { id:'BD-DRP5', name:'be quiet! Dark Rock Pro 5', brand:'bequiet', type:'air', tdpCapable:250, price:599, note:'旗舰静音', official:true, launchPrice:699, launchDate:'2024-06' },
+    { id:'DC-ASS4', name:'九州风神 阿萨辛4', brand:'deepcool', type:'air', tdpCapable:280, price:529, note:'旗舰风冷', official:true, launchPrice:599, launchDate:'2024-06' },
+    { id:'NH-D15G2', name:'猫头鹰 NH-D15 G2', brand:'noctua', type:'air', tdpCapable:220, price:1199, note:'风冷之王', official:true, launchPrice:1299, launchDate:'2024-07' },
+    // ============ 一体水冷 (排序: 按冷排尺寸升序) ============
+    // --- 240mm ---
+    { id:'ID-A410', name:'ID-Cooling FROZN A410 240', brand:'idcooling', type:'aio', tdpCapable:250, price:349, note:'性价比240', official:true, launchPrice:399, launchDate:'2025-01' },
+    { id:'AIO-240', name:'240mm 一体水冷', brand:'deepcool', type:'aio', tdpCapable:250, price:399, note:'主流水冷', official:true },
+    { id:'CM-ML240', name:'酷冷至尊 MasterLiquid 240L', brand:'coolermaster', type:'aio', tdpCapable:260, price:399, note:'240L水冷', official:true, launchPrice:449, launchDate:'2025-03' },
+    { id:'ARC-LF240', name:'Arctic Liquid Freezer III 240', brand:'arctic', type:'aio', tdpCapable:300, price:499, note:'性能240', official:true, launchPrice:549, launchDate:'2025-01' },
+    { id:'CS-H100I', name:'海盗船 H100i RGB 240', brand:'corsair', type:'aio', tdpCapable:300, price:799, note:'品牌240', official:true, launchPrice:899, launchDate:'2024-06' },
+    { id:'NZ-X53', name:'NZXT Kraken X53 240', brand:'nzxt', type:'aio', tdpCapable:300, price:899, note:'电竞240', official:true, launchPrice:999, launchDate:'2024-01' },
+    // --- 360mm ---
     { id:'TR-FH', name:'利民 Frozen Horizon 360', brand:'thermalright', type:'aio', tdpCapable:360, price:449, note:'性价比360水冷', official:true },
-    // ======= Budget Cooler =======
-    { id:'AIR-B', name:'风冷 下压式', brand:'deepcool', type:'air', tdpCapable:65, price:49, note:'入门低功耗', official:true }
+    { id:'AIO-360', name:'360mm 一体水冷', brand:'corsair', type:'aio', tdpCapable:350, price:699, note:'高端水冷', official:true },
+    { id:'ARC-LF360', name:'Arctic Liquid Freezer III 360', brand:'arctic', type:'aio', tdpCapable:400, price:699, note:'性能360', official:true, launchPrice:799, launchDate:'2025-01' },
+    { id:'CS-H150I', name:'海盗船 H150i Elite 360', brand:'corsair', type:'aio', tdpCapable:400, price:1099, note:'旗舰360', official:true, launchPrice:1299, launchDate:'2024-06' },
+    { id:'NZ-X73', name:'NZXT Kraken X73 360', brand:'nzxt', type:'aio', tdpCapable:400, price:1299, note:'高端360', official:true, launchPrice:1499, launchDate:'2024-01' },
+    // --- 420mm+ ---
+    { id:'AIO-420', name:'420mm 一体水冷', brand:'nzxt', type:'aio', tdpCapable:400, price:1099, note:'旗舰水冷', official:false }
   ],
   case: [
     { id:'CASE-E', name:'经济型机箱 (M-ATX)', brand:'generic', formFactors:['m-atx'], maxGpuLen:300, maxCoolerHt:155, radiators:[], noise:'20-25dB', size:'m-atx', price:149, note:'经济(M-ATX/无侧透/基础风道)', official:true },
