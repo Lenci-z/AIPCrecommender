@@ -963,7 +963,7 @@ function analyzeBottleneck(build, scenario, budget) {
         scores.push(0);
       }
     } else if (scenario === 'ai') {
-      var vramNeeded = cpu.cores > 12 ? 24 : (cpu.cores > 8 ? 16 : 12);
+      var vramNeeded = getSceneMin(scenario, budget).gpuVRAM;
       if (gpu.vram < vramNeeded) {
         var vramSev = Math.round((1 - gpu.vram / vramNeeded) * 100);
         // Find GPU upgrade suggestions from database
@@ -1089,6 +1089,17 @@ function analyzeBottleneck(build, scenario, budget) {
       bn.brandWarning = { level: 'room', severity: 30, detail: '\u4e3b\u677f\u4e0eCPU/\u54c1\u724c\u672a\u5339\u914d: ' + build.parts.mb.name, fix: brandExplain };
       scores.push(30);
       bn.overall = 'room';
+    }
+  }
+
+  // ---- Quantization Hint (AI scenario) ----
+  bn.quantTip = null;
+  if (scenario === 'ai' && build.parts.gpu && build.parts.gpu.vram) {
+    var vram = build.parts.gpu.vram;
+    if (vram >= 8 && vram < 16) {
+      bn.quantTip = '当前显存 ' + vram + 'GB 可使用 INT4 量化运行 13B 模型（约需 8GB），FP16 精度需 26GB 显存。量化方案推理质量略有下降但可用';
+    } else if (vram >= 16 && vram < 24) {
+      bn.quantTip = '当前显存 ' + vram + 'GB 可流畅运行 INT4 量化模型，部分 34B 模型需 INT4 量化（≥16GB）';
     }
   }
 
@@ -1302,9 +1313,12 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
     if (gpu && gpu.price > maxGpuPrice && gpu.price > 0) {
       build.warnings.push('GPU价格('+gpu.price+')超出预算上限('+Math.round(maxGpuPrice)+')，建议提升预算或切换全渠道');
     }
-    if (scenario === 'ai' && gpu && gpu.vram < 12) {
-      for (var gi2 = 0; gi2 < gpuPool.length; gi2++) {
-        if (gpuPool[gi2].vram >= 12 && gpuPool[gi2].price <= maxGpuPrice * 1.2) { gpu = gpuPool[gi2]; break; }
+    if (scenario === 'ai' && gpu) {
+      var minVRAM = getSceneMin(scenario, budget).gpuVRAM;
+      if (gpu.vram < minVRAM) {
+        for (var gi2 = 0; gi2 < gpuPool.length; gi2++) {
+          if (gpuPool[gi2].vram >= minVRAM && gpuPool[gi2].price <= maxGpuPrice * 1.2) { gpu = gpuPool[gi2]; break; }
+        }
       }
     }
   }
@@ -1320,7 +1334,7 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
     if (!officialFilter(r)) return false;
     return true;
   });
-  var targetRAM = cfg.ramMinGB || 16;
+  var targetRAM = Math.max(cfg.ramMinGB || 16, getSceneMin(scenario, budget).ramGB);
   if (wantECC && targetRAM < 32) targetRAM = 32; // ECC minimum
   ramPool.sort(function(a, b) {
     var aFit = Math.abs(a.capacity - targetRAM);
@@ -2325,6 +2339,15 @@ function renderBottleneck(bn) {
     html += '<span style="font-weight:700;color:#0071e3;">\u5c0f\u8ba1: \u00a5' + subTotal.toLocaleString() + '</span>';
     html += '</div>';
   }
+
+  // ---- Quantization Hint ----
+  if (bn.quantTip) {
+    html += '<div style="grid-column:1/-1;background:#fef7e0;border-radius:8px;padding:10px 14px;font-size:11px;color:#8d6e00;display:flex;align-items:flex-start;gap:8px;">';
+    html += '<span style="font-size:14px;">&#128161;</span>';
+    html += '<span>' + bn.quantTip + '</span>';
+    html += '</div>';
+  }
+
   document.getElementById('bnGrid').innerHTML = html;
 }
 
