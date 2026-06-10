@@ -24,7 +24,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .btn-secondary:hover { background: #d2d2d7; }
 .scenario-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
 .scenario-card { background: #fff; border: 2px solid transparent; border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.06); text-align: center; }
-.scenario-card:hover { border-color: #0071e3; transform: translateY(-2px); }
+.scenario-card:hover { border-color: #0071e3; }
+body.mouse-mode .scenario-card:hover { transform: translateY(-2px); }
 .scenario-card.active { border-color: #0071e3; background: #f0f7ff; }
 .scenario-card .icon { font-size: 32px; margin-bottom: 8px; }
 .scenario-card .name { font-size: 14px; font-weight: 600; }
@@ -141,7 +142,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .step-nav .btn:disabled { opacity:0.4; cursor:not-allowed; }
 .step-pick-card { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
 .step-pick-card .scenario-card { background:#fff; border:2px solid transparent; border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.06); text-align:center; }
-.step-pick-card .scenario-card:hover { border-color:#0071e3; transform:translateY(-2px); }
+.step-pick-card .scenario-card:hover { border-color:#0071e3; }
+body.mouse-mode .step-pick-card .scenario-card:hover { transform:translateY(-2px); }
 .step-pick-card .scenario-card.active { border-color:#0071e3; background:#f0f7ff; }
 @media (max-width:768px) { .step-pick-card { grid-template-columns:repeat(2,1fr); } .steps { flex-direction:column; border-radius:10px; overflow:hidden; } .step-item { border-right:none; border-bottom:1px solid #e8e8ed; } #appleEntry { flex-direction:row !important; padding:12px 14px !important; } }
 /* Perf cards in step 3 */
@@ -1591,6 +1593,7 @@ function goStep(n) {
 // ==================== STEP 1: CARD HIGHLIGHT & KEYBOARD NAV ====================
 
 var scenarioList = ['gaming', 'productivity', 'ai', 'office'];
+var inputMode = 'keyboard'; // 'keyboard' | 'mouse' — 追踪用户最后一次使用的输入方式
 
 function highlightCard(s) {
   state.scenario = s;
@@ -1639,10 +1642,16 @@ document.addEventListener('keydown', function(e) {
   var idx = scenarioList.indexOf(state.scenario || 'gaming');
   if (e.key === 'ArrowLeft') {
     e.preventDefault();
+    inputMode = 'keyboard';
+    document.body.classList.add('keyboard-mode');
+    document.body.classList.remove('mouse-mode');
     idx = (idx - 1 + scenarioList.length) % scenarioList.length;
     highlightCard(scenarioList[idx]);
   } else if (e.key === 'ArrowRight') {
     e.preventDefault();
+    inputMode = 'keyboard';
+    document.body.classList.add('keyboard-mode');
+    document.body.classList.remove('mouse-mode');
     idx = (idx + 1) % scenarioList.length;
     highlightCard(scenarioList[idx]);
   } else if (e.key === 'Enter') {
@@ -5026,6 +5035,29 @@ rebuild();
 setTimeout(function() { syncBudget('slider'); }, 100);
 // Price chart selector is loaded on-demand in v5.3 (step wizard)
 try { populatePriceSelector(); } catch(e) {}
+
+// Step 1: bind mouseenter on scenario cards for input mode tracking
+// Set initial body class to keyboard mode (default)
+document.body.classList.add('keyboard-mode');
+// When user moves cursor to a card, switch to mouse mode and highlight that card
+document.querySelectorAll('.scenario-card').forEach(function(card) {
+  card.addEventListener('mouseenter', function() {
+    inputMode = 'mouse';
+    document.body.classList.add('mouse-mode');
+    document.body.classList.remove('keyboard-mode');
+    highlightCard(this.dataset.scenario);
+  });
+});
+// Apple entry banner: also track mouse input
+var appleEntryEl = document.getElementById('appleEntry');
+if (appleEntryEl) {
+  appleEntryEl.addEventListener('mouseenter', function() {
+    inputMode = 'mouse';
+    document.body.classList.add('mouse-mode');
+    document.body.classList.remove('keyboard-mode');
+    highlightCard('apple');
+  });
+}
 </script>
 
 </body></html>
