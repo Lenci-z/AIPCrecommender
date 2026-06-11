@@ -891,6 +891,9 @@ function analyzeBottleneck(build, scenario, budget) {
   var storage = build.parts.storage;
   var bn = { cpu: null, gpu: null, ram: null, storage: null, overall: 'good' };
   var scores = [];
+  // wantECC mirrors the logic in buildRecommendation — needed for RAM bottleneck check
+  var memPref = state.memPref || 'auto';
+  var wantECC = (cfg.needECC || (memPref === 'ecc')) && budget >= 10000;
 
   // ---- CPU Bottleneck ----
   if (gpu) {
@@ -1745,9 +1748,9 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
   return build;
 }
 
-// Global error handler
+// Global error handler — console only, no alert popup (popup suppressed after v6.1.4 fix)
 window.onerror = function(msg, url, line, col, err) {
-  alert('页面错误: ' + msg + ' (行' + line + ')\n\n请截图报告此错误。');
+  console.error('[GlobalError]', msg, 'line:' + line, err);
   return false;
 };
 
@@ -2078,7 +2081,12 @@ function rebuild() {
     renderStep3(build);
   } catch(e) {
     console.error('rebuild() error:', e);
-    alert('rebuild() 错误: ' + e.message);
+    // Show error inline in step3 warnings, no alert popup
+    var errDiv = document.getElementById('step3Warnings');
+    if (errDiv) {
+      errDiv.innerHTML = '<div style="padding:12px;background:#fcebeb;border-radius:8px;font-size:12px;color:#a32d2d;border:1px solid #f5c6cb;">⚠️ 生成配置时出错: ' + e.message + '</div>';
+      errDiv.style.display = '';
+    }
   }
 }
 
