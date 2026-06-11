@@ -2089,7 +2089,7 @@ function rebuild() {
     console.log('building recommendation for', sc, effectiveBudget, state.brandPref);
     var build = buildRecommendation(sc, effectiveBudget, state.brandPref, state.memPref, state.weights);
     currentBuild = build;
-    upgradedByUser = {};
+    // upgradedByUser preserved across rebuilds so bottleneck card shows correct user-selected labels
     if (sc !== 'apple') {
       currentBottleneck = analyzeBottleneck(build, sc, effectiveBudget);
     } else {
