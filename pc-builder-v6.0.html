@@ -1237,6 +1237,29 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
     cpu = cpuPool[cpuPool.length - 1];
     if (cpu.price > 0) build.warnings.push('CPU价格('+cpu.price+')超出预算上限('+Math.round(maxCpuPrice)+')，建议提升预算');
   }
+  // Post-selection brand validation: force re-pick if brand mismatch
+  if (brandPref === 'amd' && cpu && cpu.brand !== 'amd') {
+    var amdPool = cpuPool.filter(function(c) { return c.brand === 'amd'; });
+    if (amdPool.length > 0) {
+      amdPool.sort(function(a,b) { return scoreCPU(b, scenario) - scoreCPU(a, scenario); });
+      cpu = amdPool[0];
+      build.warnings.push('品牌偏好AMD全家桶，已自动修正为AMD CPU: ' + cpu.name);
+    }
+  } else if (brandPref === 'intel-nvidia' && cpu && cpu.brand !== 'intel') {
+    var intelPool = cpuPool.filter(function(c) { return c.brand === 'intel'; });
+    if (intelPool.length > 0) {
+      intelPool.sort(function(a,b) { return scoreCPU(b, scenario) - scoreCPU(a, scenario); });
+      cpu = intelPool[0];
+      build.warnings.push('品牌偏好Intel+NVIDIA，已自动修正CPU选择');
+    }
+  } else if (brandPref === 'intel-amd' && cpu && cpu.brand !== 'intel') {
+    var intelPool2 = cpuPool.filter(function(c) { return c.brand === 'intel'; });
+    if (intelPool2.length > 0) {
+      intelPool2.sort(function(a,b) { return scoreCPU(b, scenario) - scoreCPU(a, scenario); });
+      cpu = intelPool2[0];
+      build.warnings.push('品牌偏好Intel+AMD，已自动修正CPU选择');
+    }
+  }
   build.parts.cpu = cpu;
   usedBudget += cpu.price;
 
