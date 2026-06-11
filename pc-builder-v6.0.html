@@ -5171,75 +5171,81 @@ function renderPriceChart() {
     renderPriceChart._initialDrawDone = true;
     renderPriceChart._emptyDraw = function() { renderPriceChart(); };
   }
+  // Bind mouse events lazily — canvas is guaranteed to exist at this point
+  bindPriceChartEvents();
 }
 
-// Mouse hover crosshair handler
-document.getElementById('priceChartCanvas').onmousemove = function(e) {
+// Mouse hover crosshair handler — bound lazily after canvas is created
+function bindPriceChartEvents() {
   var cnv = document.getElementById('priceChartCanvas');
-  if (!cnv) return;
-  var rc = renderPriceChart;
-  if (!rc._ctx) return;
-  var dpr = rc._dpr || 1;
-  var rect = cnv.getBoundingClientRect();
-  var mx = (e.clientX - rect.left) * (cnv.width / dpr / rect.width);
-  var pad = rc._padding;
-  if (mx >= pad.left && mx <= rc._w - pad.right) {
-    var dataIdx = Math.round((mx - pad.left) / rc._chartW * (rc._months.length - 1));
-    dataIdx = Math.max(0, Math.min(rc._months.length - 1, dataIdx));
-    var cx = pad.left + rc._chartW * (dataIdx / (rc._months.length - 1 || 1));
-    var jdY = pad.top + rc._chartH * (1 - (rc._jdData[dataIdx].price - rc._minP) / (rc._maxP - rc._minP));
-    var tbY = pad.top + rc._chartH * (1 - (rc._tbData[dataIdx].price - rc._minP) / (rc._maxP - rc._minP));
+  if (!cnv || cnv._eventsBound) return;
+  cnv._eventsBound = true;
 
-    // Full redraw with crosshair
+  cnv.onmousemove = function(e) {
+    var rc = renderPriceChart;
+    if (!rc._ctx) return;
+    var dpr = rc._dpr || 1;
+    var rect = cnv.getBoundingClientRect();
+    var mx = (e.clientX - rect.left) * (cnv.width / dpr / rect.width);
+    var pad = rc._padding;
+    if (mx >= pad.left && mx <= rc._w - pad.right) {
+      var dataIdx = Math.round((mx - pad.left) / rc._chartW * (rc._months.length - 1));
+      dataIdx = Math.max(0, Math.min(rc._months.length - 1, dataIdx));
+      var cx = pad.left + rc._chartW * (dataIdx / (rc._months.length - 1 || 1));
+      var jdY = pad.top + rc._chartH * (1 - (rc._jdData[dataIdx].price - rc._minP) / (rc._maxP - rc._minP));
+      var tbY = pad.top + rc._chartH * (1 - (rc._tbData[dataIdx].price - rc._minP) / (rc._maxP - rc._minP));
+
+      // Full redraw with crosshair
+      renderPriceChart();
+      var ctx = rc._ctx;
+      var w = rc._w;
+
+      // Vertical dashed line
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(cx, pad.top);
+      ctx.lineTo(cx, pad.top + rc._chartH);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // JD dot
+      ctx.fillStyle = '#0071e3';
+      ctx.beginPath(); ctx.arc(cx, jdY, 6, 0, 2*Math.PI); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(cx, jdY, 3, 0, 2*Math.PI); ctx.fill();
+      // TB dot
+      ctx.fillStyle = '#ff9500';
+      ctx.beginPath(); ctx.arc(cx, tbY, 6, 0, 2*Math.PI); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(cx, tbY, 3, 0, 2*Math.PI); ctx.fill();
+
+      // Tooltip
+      var toolX = cx + 12;
+      if (toolX + 120 > w - pad.right) toolX = cx - 130;
+      ctx.fillStyle = 'rgba(0,0,0,0.85)';
+      var tipY = Math.max(pad.top, Math.min(pad.top + rc._chartH - 46, jdY - 46));
+      ctx.beginPath();
+      ctx.roundRect(toolX, tipY, 128, 46, 6);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(rc._months[dataIdx].year + '-' + String(rc._months[dataIdx].month).padStart(2, '0'), toolX + 8, tipY + 14);
+      ctx.fillStyle = '#0071e3';
+      ctx.font = 'bold 13px sans-serif';
+      ctx.fillText('\u4eac\u4e1c: \u00a5' + rc._jdData[dataIdx].price, toolX + 8, tipY + 32);
+      ctx.fillStyle = '#ff9500';
+      ctx.font = '12px sans-serif';
+      ctx.fillText('\u5929\u732b: \u00a5' + rc._tbData[dataIdx].price, toolX + 76, tipY + 32);
+    }
+  };
+
+  cnv.onmouseleave = function() {
     renderPriceChart();
-    var ctx = rc._ctx;
-    var w = rc._w;
-
-    // Vertical dashed line
-    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(cx, pad.top);
-    ctx.lineTo(cx, pad.top + rc._chartH);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // JD dot
-    ctx.fillStyle = '#0071e3';
-    ctx.beginPath(); ctx.arc(cx, jdY, 6, 0, 2*Math.PI); ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.beginPath(); ctx.arc(cx, jdY, 3, 0, 2*Math.PI); ctx.fill();
-    // TB dot
-    ctx.fillStyle = '#ff9500';
-    ctx.beginPath(); ctx.arc(cx, tbY, 6, 0, 2*Math.PI); ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.beginPath(); ctx.arc(cx, tbY, 3, 0, 2*Math.PI); ctx.fill();
-
-    // Tooltip
-    var toolX = cx + 12;
-    if (toolX + 120 > w - pad.right) toolX = cx - 130;
-    ctx.fillStyle = 'rgba(0,0,0,0.85)';
-    var tipY = Math.max(pad.top, Math.min(pad.top + rc._chartH - 46, jdY - 46));
-    ctx.beginPath();
-    ctx.roundRect(toolX, tipY, 128, 46, 6);
-    ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 12px sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText(rc._months[dataIdx].year + '-' + String(rc._months[dataIdx].month).padStart(2, '0'), toolX + 8, tipY + 14);
-    ctx.fillStyle = '#0071e3';
-    ctx.font = 'bold 13px sans-serif';
-    ctx.fillText('\u4eac\u4e1c: \u00a5' + rc._jdData[dataIdx].price, toolX + 8, tipY + 32);
-    ctx.fillStyle = '#ff9500';
-    ctx.font = '12px sans-serif';
-    ctx.fillText('\u5929\u732b: \u00a5' + rc._tbData[dataIdx].price, toolX + 76, tipY + 32);
-  }
-};
-
-document.getElementById('priceChartCanvas').onmouseleave = function() {
-  renderPriceChart();
-};
+  };
+}
 
 // Helper: roundRect for Canvas
 CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
