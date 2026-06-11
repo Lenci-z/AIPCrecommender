@@ -884,11 +884,13 @@ function officialFilter(item) {
 }
 
 function analyzeBottleneck(build, scenario, budget) {
+  // Safety guard for missing build/parts
+  if (!build || !build.parts) return { cpu:null, gpu:null, ram:null, storage:null, overall:'good' };
   var cfg = scenarioConfig[scenario];
-  var cpu = build.parts.cpu;
-  var gpu = build.parts.gpu;
-  var ram = build.parts.ram;
-  var storage = build.parts.storage;
+  var cpu = build.parts.cpu || {};
+  var gpu = build.parts.gpu || {};
+  var ram = build.parts.ram || {};
+  var storage = build.parts.storage || {};
   var bn = { cpu: null, gpu: null, ram: null, storage: null, overall: 'good' };
   var scores = [];
   // wantECC mirrors the logic in buildRecommendation — needed for RAM bottleneck check
