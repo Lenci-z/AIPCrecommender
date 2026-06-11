@@ -1715,11 +1715,11 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
   if (scenario === 'gaming') {
     perfScore = (gpu.gameScore / 350) * 50 + (cpu.singleScore / 28) * 25 + (ram.freq / 60) * 15 + (storage.capacity / 200) * 10;
   } else if (scenario === 'ai') {
-    perfScore = (gpu.aiScore / 620) * 50 + (gpu.vram / 24) * 20 + (cpu.multiScore / 420) * 15 + (ram.capacity / 128) * 15;
+    perfScore = (gpu.aiScore / 620) * 50 + (gpu.vram / 24) * 20 + (cpu.multiScore / 420) * 15 + ((ram.totalCapacity || ram.capacity) / 128) * 15;
   } else if (scenario === 'productivity') {
-    perfScore = (cpu.multiScore / 420) * 35 + (gpu.aiScore / 620) * 30 + (ram.capacity / 128) * 20 + (storage.capacity / 200) * 15;
+    perfScore = (cpu.multiScore / 420) * 35 + (gpu.aiScore / 620) * 30 + ((ram.totalCapacity || ram.capacity) / 128) * 20 + (storage.capacity / 200) * 15;
   } else {
-    perfScore = (cpu.singleScore / 28) * 30 + (cpu.multiScore / 420) * 20 + (storage.capacity / 200) * 15 + (ram.capacity / 16) * 15 + 20;
+    perfScore = (cpu.singleScore / 28) * 30 + (cpu.multiScore / 420) * 20 + (storage.capacity / 200) * 15 + ((ram.totalCapacity || ram.capacity) / 16) * 15 + 20;
   }
   perfScore = Math.round(Math.min(100, perfScore));
 
@@ -2522,6 +2522,16 @@ function applyUpgrade(type, partId) {
   // Record upgrade
   var oldPrice = oldPart.price || 0;
   var newPrice = newPart.price || 0;
+  
+  // Pre-calculate multi-stick pricing for RAM upgrades
+  if (type === 'ram') {
+    var targetRAM = Math.max(scenarioConfig[state.scenario].ramMinGB || 16, getSceneMin(state.scenario, state.budget).ramGB);
+    if (state.memPref === 'ecc' && targetRAM < 32) targetRAM = 32;
+    newPart.sticks = newPart.capacity >= targetRAM ? 1 : Math.min(Math.ceil(targetRAM / newPart.capacity), 4);
+    newPart.totalCapacity = newPart.capacity * newPart.sticks;
+    newPart.totalPrice = newPart.price * newPart.sticks;
+  }
+  
   upgradeHistory.push({
     type: type,
     oldPart: oldPart.name,
@@ -2533,7 +2543,10 @@ function applyUpgrade(type, partId) {
   
   // Apply the swap
   currentBuild.parts[type] = JSON.parse(JSON.stringify(newPart));
-  currentBuild.totalPrice = currentBuild.totalPrice - oldPrice + newPrice;
+  // Use multi-stick total price for RAM upgrades
+  var oldMultiPrice = (type === 'ram' && oldPart.totalPrice) ? oldPart.totalPrice : oldPrice;
+  var newMultiPrice = (type === 'ram' && newPart.totalPrice) ? newPart.totalPrice : newPrice;
+  currentBuild.totalPrice = currentBuild.totalPrice - oldMultiPrice + newMultiPrice;
   
   // ===== Update summary to match new part =====
   if (!currentBuild.summary) currentBuild.summary = {};
@@ -2546,7 +2559,8 @@ function applyUpgrade(type, partId) {
     currentBuild.summary.gpuModel = newPart.name;
     currentBuild.summary.gpuVRAM = newPart.vram;
   } else if (type === 'ram') {
-    currentBuild.summary.ramCapacity = newPart.capacity;
+    // totalCapacity/sticks/totalPrice already pre-calculated above
+    currentBuild.summary.ramCapacity = newPart.totalCapacity || newPart.capacity;
     currentBuild.summary.ramFreq = newPart.freq;
     currentBuild.summary.ramGen = newPart.gen;
     currentBuild.summary.ramECC = !!newPart.ecc;
@@ -4520,7 +4534,7 @@ function renderCurrentPerf(build) {
     var ram = build.parts.ram || {};
     var storage = build.parts.storage || {};
     var cpuName2 = cpu.name || '未选配';
-    var ramCap = ram.capacity || 0;
+    var ramCap = ram.totalCapacity || ram.capacity || 0;
     var ramFreq = ram.freq || 0;
     var storageSpeed = storage.seqRead || 0;
     var storageCap = storage.capacity || 0;
@@ -4603,7 +4617,7 @@ function renderCurrentPerf(build) {
     // RAM
     html += '<div style="background:#fafafa;border-radius:8px;padding:10px;text-align:center;">';
     html += '<div style="font-size:10px;color:#86868b;">内存</div>';
-    html += '<div style="font-size:18px;font-weight:700;color:#0071e3;margin:2px 0;">' + (ram.capacity || 0) + 'GB</div>';
+    html += '<div style="font-size:18px;font-weight:700;color:#0071e3;margin:2px 0;">' + (ram.totalCapacity || ram.capacity || 0) + 'GB</div>';
     html += '<div style="font-size:9px;color:#86868b;">' + (ram.freq || 0) + 'MHz' + (ram.ecc ? ' ECC' : '') + '</div></div>';
     html += '</div>';
     body.innerHTML = html;
