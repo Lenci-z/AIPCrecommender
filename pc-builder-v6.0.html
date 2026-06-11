@@ -1745,6 +1745,12 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
   return build;
 }
 
+// Global error handler
+window.onerror = function(msg, url, line, col, err) {
+  alert('页面错误: ' + msg + ' (行' + line + ')\n\n请截图报告此错误。');
+  return false;
+};
+
 // ==================== BOTTLENECK-AWARE ALTERNATIVES ====================
 
 function findAlternativesWithFix(build, scenario, budget, brandPref, memPref, weights) {
@@ -1782,6 +1788,7 @@ function goStep(n) {
       rebuild();
     } catch(e) {
       console.error('goStep(3) rebuild error:', e);
+      alert('生成配置失败: ' + e.message + '\n\n请检查控制台(F12)获取完整信息。');
       var errDiv = document.getElementById('step3Warnings');
       if (errDiv) {
         errDiv.innerHTML = '<div style="padding:12px;background:#fcebeb;border-radius:8px;font-size:12px;color:#a32d2d;border:1px solid #f5c6cb;">&#9888; \u751f\u6210\u914d\u7f6e\u5931\u8d25: ' + e.message + '</div>';
