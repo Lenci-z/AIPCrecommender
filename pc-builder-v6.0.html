@@ -863,6 +863,26 @@ function getSceneMin(scenario, budget) {
 
 // ==================== RECOMMENDATION ENGINE ====================
 
+// 场景化性能分参考值（动态扫描DB，自动适配新硬件）
+function getScoreRefs() {
+  if (!getScoreRefs._cache) {
+    var mg = 50000, ms = 2500, mm = 40000;
+    // GPU — 扫描 gameScore（游戏场景用），aiScore 用固定参考值 45000（以 13B 为 50 分基准）
+    for (var i = 0; i < DB.gpu.length; i++) {
+      var g = DB.gpu[i];
+      if (g.gameScore > mg) mg = g.gameScore;
+    }
+    // CPU — 扫描最高值
+    for (var i = 0; i < DB.cpu.length; i++) {
+      var c = DB.cpu[i];
+      if (c.singleScore > ms) ms = c.singleScore;
+      if (c.multiScore > mm) mm = c.multiScore;
+    }
+    getScoreRefs._cache = { gpuGame: mg, gpuAi: 45000, cpuSingle: ms, cpuMulti: mm };
+  }
+  return getScoreRefs._cache;
+}
+
 function scoreCPU(cpu, scenario) {
   if (scenario === 'gaming') return cpu.singleScore * 0.6 + cpu.multiScore * 0.1;
   if (scenario === 'ai' || scenario === 'productivity') return cpu.multiScore * 0.5 + cpu.singleScore * 0.2;
@@ -1714,18 +1734,42 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
     }
   }
 
-  // ---- Performance Score ----
+  // ---- Performance Score (场景化归一化) ----
   var perfScore = 0;
+  var refs = getScoreRefs();
+  var effectiveRam = ram.totalCapacity || ram.capacity || 0;
+  var storageGB = storage.capacity || 0;
+
   if (scenario === 'gaming') {
-    perfScore = (gpu.gameScore / 350) * 50 + (cpu.singleScore / 28) * 25 + (ram.freq / 60) * 15 + (storage.capacity / 200) * 10;
+    // GPU 55% + CPU单核 20% + 内存频率 10% + 存储容量 15%
+    perfScore = Math.round(
+      Math.min(55, (gpu.gameScore   / refs.gpuGame)  * 55) +
+      Math.min(20, (cpu.singleScore / refs.cpuSingle) * 20) +
+      Math.min(10, (ram.freq        / 8400)          * 10) +
+      Math.min(15, (storageGB       / 4000)          * 15));
   } else if (scenario === 'ai') {
-    perfScore = (gpu.aiScore / 620) * 50 + (gpu.vram / 24) * 20 + (cpu.multiScore / 420) * 15 + ((ram.totalCapacity || ram.capacity) / 128) * 15;
+    // GPU AI 40% + 显存 35% + CPU多核 10% + 内存总量 15%
+    perfScore = Math.round(
+      Math.min(40, (gpu.aiScore    / refs.gpuAi)    * 40) +
+      Math.min(35, (gpu.vram       / 32)            * 35) +
+      Math.min(10, (cpu.multiScore / refs.cpuMulti)  * 10) +
+      Math.min(15, (effectiveRam   / 128)           * 15));
   } else if (scenario === 'productivity') {
-    perfScore = (cpu.multiScore / 420) * 35 + (gpu.aiScore / 620) * 30 + ((ram.totalCapacity || ram.capacity) / 128) * 20 + (storage.capacity / 200) * 15;
+    // CPU多核 30% + GPU AI 35% + 内存总量 20% + 存储容量 15%
+    perfScore = Math.round(
+      Math.min(30, (cpu.multiScore / refs.cpuMulti)  * 30) +
+      Math.min(35, (gpu.aiScore   / refs.gpuAi)     * 35) +
+      Math.min(20, (effectiveRam  / 128)            * 20) +
+      Math.min(15, (storageGB     / 4000)           * 15));
   } else {
-    perfScore = (cpu.singleScore / 28) * 30 + (cpu.multiScore / 420) * 20 + (storage.capacity / 200) * 15 + ((ram.totalCapacity || ram.capacity) / 16) * 15 + 20;
+    // 办公: 基础分15 + CPU单核 25% + CPU多核 25% + 内存 20% + 存储 15%
+    perfScore = 15 + Math.round(
+      Math.min(25, (cpu.singleScore / refs.cpuSingle) * 25) +
+      Math.min(25, (cpu.multiScore  / refs.cpuMulti)  * 25) +
+      Math.min(20, (effectiveRam    / 32)            * 20) +
+      Math.min(15, (storageGB       / 2000)          * 15));
   }
-  perfScore = Math.round(Math.min(100, perfScore));
+  perfScore = Math.min(100, Math.max(0, perfScore));
 
   var pricePerf = usedBudget > 0 ? Math.round(perfScore * 1000 / usedBudget * 10) / 10 : 0;
 
