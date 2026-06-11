@@ -896,7 +896,7 @@ function analyzeBottleneck(build, scenario, budget) {
   var wantECC = (cfg.needECC || (memPref === 'ecc')) && budget >= 10000;
 
   // ---- CPU Bottleneck ----
-  if (gpu) {
+  if (gpu && cpu) {
     if (scenario === 'gaming') {
       var cpuGpuRatio = cpu.singleScore / gpu.gameScore;
       if (cpuGpuRatio < 0.08) {
