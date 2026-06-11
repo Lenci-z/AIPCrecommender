@@ -904,7 +904,15 @@ function analyzeBottleneck(build, scenario, budget) {
         var upgradeTargetScore = Math.round(gpu.gameScore * 0.09);
         // Find upgrade option
         var upgradeCpu = null;
-        var cpuOpts = DB.cpu.filter(function(c) { return c.singleScore >= upgradeTargetScore && officialFilter(c); });
+        var cpuOpts = DB.cpu.filter(function(c) {
+          if (c.singleScore < upgradeTargetScore) return false;
+          if (!officialFilter(c)) return false;
+          // Brand preference filtering for upgrade suggestions
+          if (state.brandPref === 'intel-nvidia' && c.brand !== 'intel') return false;
+          if (state.brandPref === 'intel-amd' && c.brand !== 'intel') return false;
+          if (state.brandPref === 'amd' && c.brand !== 'amd') return false;
+          return true;
+        });
         cpuOpts.sort(function(a,b) { return a.price - b.price; });
         if (cpuOpts.length > 0) upgradeCpu = cpuOpts[0];
         var upgradeMsg = upgradeCpu ? '可升级至 ' + upgradeCpu.name.split(' ').slice(0,3).join(' ') + ' (+' + (upgradeCpu.price - cpu.price > 0 ? '\u00a5' + (upgradeCpu.price - cpu.price) : '\u00a5' + upgradeCpu.price) + ')' : '升级CPU至单核分 ' + upgradeTargetScore + ' 以上';
@@ -1668,7 +1676,14 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
           return mp;
         }, apply: function(p) { build.parts.mb = p; return p.price; } },
       { type: 'cpu', pool: function() {
-          var cpp = DB.cpu.filter(function(c) { return officialFilter(c); });
+          var cpp = DB.cpu.filter(function(c) {
+            if (!officialFilter(c)) return false;
+            // Brand preference filtering must also apply to downgrade replacements
+            if (brandPref === 'intel-nvidia' && c.brand !== 'intel') return false;
+            if (brandPref === 'intel-amd' && c.brand !== 'intel') return false;
+            if (brandPref === 'amd' && c.brand !== 'amd') return false;
+            return true;
+          });
           cpp.sort(function(a,b) { return a.price - b.price; });
           return cpp;
         }, apply: function(p) { build.parts.cpu = p; cpu = p; return p.price; } }
