@@ -2050,31 +2050,36 @@ function setWarrantyMode(mode) {
 }
 
 function rebuild() {
-  state.brandPref = document.getElementById('brandPref').value;
-  state.memPref = document.getElementById('memPref').value;
-  state.mbBrand = document.getElementById('mbBrand').value;
-  state.psuBrand = document.getElementById('psuBrand').value;
-  state.coolerBrand = document.getElementById('coolerBrand').value;
-  state.ramBrand = document.getElementById('ramBrand').value;
-  state.storageBrand = document.getElementById('storageBrand').value;
-  state.caseBrand = document.getElementById('caseBrand').value;
-  state.caseSize = document.getElementById('caseSize').value;
-  state.aiModelSize = document.getElementById('aiModelSize').value;
-  var sc = state.scenario;
-  var effectiveBudget = getEffectiveBudget();
-  var build = buildRecommendation(sc, effectiveBudget, state.brandPref, state.memPref, state.weights);
-  currentBuild = build;
-  upgradedByUser = {}; // Reset user upgrade tracking for new build
-  if (sc !== 'apple') {
-    currentBottleneck = analyzeBottleneck(build, sc, effectiveBudget);
-  } else {
-    currentBottleneck = { overall: 'good', cpu: null, gpu: null, ram: null, storage: null };
+  console.log('rebuild() called, scenario:', state.scenario, 'budget:', state.budget);
+  try {
+    state.brandPref = document.getElementById('brandPref').value;
+    state.memPref = document.getElementById('memPref').value;
+    state.mbBrand = document.getElementById('mbBrand').value;
+    state.psuBrand = document.getElementById('psuBrand').value;
+    state.coolerBrand = document.getElementById('coolerBrand').value;
+    state.ramBrand = document.getElementById('ramBrand').value;
+    state.storageBrand = document.getElementById('storageBrand').value;
+    state.caseBrand = document.getElementById('caseBrand').value;
+    state.caseSize = document.getElementById('caseSize').value;
+    state.aiModelSize = document.getElementById('aiModelSize').value;
+    var sc = state.scenario;
+    var effectiveBudget = getEffectiveBudget();
+    console.log('building recommendation for', sc, effectiveBudget, state.brandPref);
+    var build = buildRecommendation(sc, effectiveBudget, state.brandPref, state.memPref, state.weights);
+    currentBuild = build;
+    upgradedByUser = {};
+    if (sc !== 'apple') {
+      currentBottleneck = analyzeBottleneck(build, sc, effectiveBudget);
+    } else {
+      currentBottleneck = { overall: 'good', cpu: null, gpu: null, ram: null, storage: null };
+    }
+    currentAlternatives = findAlternativesWithFix(build, sc, effectiveBudget, state.brandPref, state.memPref, state.weights);
+    renderAppleCompare();
+    renderStep3(build);
+  } catch(e) {
+    console.error('rebuild() error:', e);
+    alert('rebuild() 错误: ' + e.message);
   }
-  currentAlternatives = findAlternativesWithFix(build, sc, effectiveBudget, state.brandPref, state.memPref, state.weights);
-  // Render Apple model selector (always needed for apple scenario)
-  renderAppleCompare();
-  // Render step 3 content
-  renderStep3(build);
 }
 
 // ==================== STEP 3 RENDERING ====================
