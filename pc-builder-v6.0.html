@@ -1056,7 +1056,9 @@ function analyzeBottleneck(build, scenario, budget) {
       fix: '更换为支持ECC的主板（如 X870E / B850 / W680 系列）或换回非ECC内存' };
     scores.push(25);
   } else if (ram.freq < (scenarioConfig[scenario].ramPreferFreq || 3200)) {
-    bn.ram = { level: 'room', severity: 15, detail: 'RAM频率(' + ram.freq + 'MHz) 略低于最佳(' + scenarioConfig[scenario].ramPreferFreq + 'MHz)',
+    var targetFreq = scenarioConfig[scenario].ramPreferFreq || 3200;
+    bn.ram = { level: 'room', severity: 15, targetFreq: targetFreq,
+      detail: 'RAM频率(' + ram.freq + 'MHz) 略低于最佳(' + targetFreq + 'MHz)',
       fix: '可选更高频率内存提升性能' };
     scores.push(15);
   } else {
@@ -2428,7 +2430,7 @@ function findUpgradeOptions(key, data) {
       if (!offFilt(c)) return false;
       if (state.brandPref === 'intel-nvidia' && c.brand !== 'intel') return false;
       if (state.brandPref === 'amd' && c.brand !== 'amd') return false;
-      if (state.brandPref === 'intel-amd' && c.brand !== 'amd') return false;
+      if (state.brandPref === 'intel-amd' && c.brand !== 'intel') return false;
       return true;
     });
     pool.sort(function(a,b) { return scoreCPU(b, state.scenario) - scoreCPU(a, state.scenario); });
@@ -2461,10 +2463,24 @@ function findUpgradeOptions(key, data) {
   if (key === 'ram' && currentParts && currentParts.ram) {
     var cur = currentParts.ram;
     var needECC = state.scenario === 'workstation' || state.scenario === 'productivity';
-    var pool = DB.ram.filter(function(r) { return offFilt(r) && r.gen === cur.gen && (!needECC || r.ecc || !scenarioConfig[state.scenario].needECC); });
-    // Sort: ECC first for workstation, then by capacity*freq
+    var pool = DB.ram.filter(function(r) {
+      if (!offFilt(r)) return false;
+      if (r.gen !== cur.gen) return false;
+      if (needECC && !r.ecc && scenarioConfig[state.scenario].needECC) return false;
+      // When frequency bottleneck, only show RAM with freq >= targetFreq and capacity >= current
+      if (data && data.targetFreq) {
+        if (r.freq < data.targetFreq) return false;
+        if (r.capacity < cur.capacity) return false;
+      }
+      return true;
+    });
+    // Sort: for freq bottleneck, sort by freq desc then capacity desc; otherwise use capacity*freq
     pool.sort(function(a,b) {
       if (needECC && a.ecc !== b.ecc) return a.ecc ? -1 : 1;
+      if (data && data.targetFreq) {
+        if (b.freq !== a.freq) return b.freq - a.freq;       // higher freq first
+        return b.capacity - a.capacity;                        // then larger capacity
+      }
       return (b.capacity * b.freq) - (a.capacity * a.freq);
     });
     for (var i = 0; i < pool.length && opts.length < 3; i++) {
