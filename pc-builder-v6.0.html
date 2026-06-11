@@ -989,9 +989,8 @@ function analyzeBottleneck(build, scenario, budget) {
 
   // ---- RAM Bottleneck ----
   var ramConfig = scenarioConfig[scenario];
-  var idealRAM = ramConfig.ramMinGB || 16;
-  if (scenario === 'ai') idealRAM = Math.max(64, cpu.cores > 12 ? 128 : 64);
-  if (scenario === 'productivity') idealRAM = Math.max(32, cpu.cores > 16 ? 64 : 32);
+  var idealRAM = Math.max(ramConfig.ramMinGB || 16, getSceneMin(scenario, budget).ramGB);
+  if (wantECC && idealRAM < 32) idealRAM = 32;
 
   var effectiveRAM = ram.totalCapacity || ram.capacity;
   if (effectiveRAM < idealRAM) {
@@ -1219,6 +1218,7 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
   // ---- CPU ----
   var cpuPool = DB.cpu.filter(function(c) {
     if (brandPref === 'intel-nvidia' && c.brand !== 'intel') return false;
+    if (brandPref === 'intel-amd' && c.brand !== 'intel') return false;
     if (brandPref === 'amd' && c.brand !== 'amd') return false;
     if (!officialFilter(c)) return false;
     return true;
@@ -1244,11 +1244,15 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
   var isAMD = cpu.brand === 'amd';
   var ddrGen = null;
   if (wantECC) {
-    ddrGen = 'ddr5'; // ECC only on DDR5
+    ddrGen = 'ddr5';
   } else if (ddrOverride) {
     ddrGen = ddrOverride;
+  } else if (socket === 'LGA1851' || socket === 'AM5' || socket === 'sTR5') {
+    ddrGen = 'ddr5';
+  } else if (socket === 'LGA1700' && budget > 6000) {
+    ddrGen = 'ddr5';
   } else {
-    ddrGen = isAMD || (scenario !== 'office' && budget > 6000) ? 'ddr5' : 'ddr4';
+    ddrGen = 'ddr4';
   }
 
   // ---- MB (ECC-aware) ----
@@ -1368,6 +1372,8 @@ function buildRecommendation(scenario, budget, brandPref, memPref, weights) {
     var aFit = Math.abs(a.capacity - targetStorage);
     var bFit = Math.abs(b.capacity - targetStorage);
     if (aFit !== bFit) return aFit - bFit;
+    // Prefer NVMe (higher read speed) over SATA
+    if (a.seqRead !== b.seqRead) return (b.seqRead || 0) - (a.seqRead || 0);
     return a.price - b.price;
   });
   var storage = storagePool[0];
